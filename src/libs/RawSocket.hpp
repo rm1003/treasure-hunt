@@ -1,3 +1,6 @@
+#ifndef RAWSOCKET_HPP_
+#define RAWSOCKET_HPP_
+
 #include <arpa/inet.h>
 #include <cstddef>
 #include <net/ethernet.h>
@@ -12,12 +15,14 @@ namespace CustomSocket {
     private:
       int socketFd;
       
-      int CreateSocket(char *);
+      int CreateSocket(char *netIntName);
     public:
       RawSocket(char *);
       ~RawSocket();
-      int Send(char *, size_t);
-      int Recv(char *, size_t);
+      int Send(char *buf, size_t len);
+      int Recv(char *buf, size_t len);
   };
 
 }
+
+#endif

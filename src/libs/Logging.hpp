@@ -1,3 +1,6 @@
+#ifndef LOGGING_HPP_
+#define LOGGING_HPP_
+
 #define ERROR_PRINT(msg)                 \
   {                                      \
     fprintf(stderr, "[ERROR] %s", #msg); \
@@ -7,3 +10,5 @@
   {                                      \
     fprintf(stderr, "[DEBUG] %s", #msg); \
   }
+
+#endif
