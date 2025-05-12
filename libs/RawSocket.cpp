@@ -1,6 +1,10 @@
 #include "RawSocket.hpp"
 #include <cstddef>
+
+extern "C" {
 #include <sys/socket.h>
+#include <unistd.h>
+}
 
 int CustomSocket::RawSocket::CreateSocket(char *nome_interface_rede) {
   // Cria arquivo para o socket sem qualquer protocolo
@@ -39,6 +43,10 @@ CustomSocket::RawSocket::RawSocket(char *ethInterfaceName) {
   if (this->CreateSocket(ethInterfaceName)) {
     exit(1);
   }
+}
+
+CustomSocket::RawSocket::~RawSocket() {
+  close(this->socketFd);
 }
 
 int CustomSocket::RawSocket::Send(char *str, size_t len) {
