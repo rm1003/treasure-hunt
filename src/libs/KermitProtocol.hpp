@@ -54,10 +54,11 @@ namespace CustomProtocol {
 
   class NetworkHandler {
     private:
-      PackageHandler pkgHandler;
+      PackageHandler *pkgHandler;
       unsigned char *rawData;
       unsigned char **splitDataArr;
 
+      const char *GetEthIntName();
       void SplitRawData();
       void GatherRawData();
     public:

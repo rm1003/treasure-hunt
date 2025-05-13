@@ -11,7 +11,6 @@ extern "C" {
 #include <stdio.h> 
 }
 
-
 namespace CustomSocket {
 
   // Given in miliseconds
