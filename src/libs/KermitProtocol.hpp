@@ -43,6 +43,8 @@ namespace CustomProtocol {
       CustomSocket::RawSocket *sokt;
 
       void SetInitMarkPkg();
+      /* Filter for bytes that may be discard signal to network chip */
+      void FilterPkg();
     public:
       PackageHandler(char *netIntName);
       ~PackageHandler();
