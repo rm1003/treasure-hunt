@@ -1,2 +1,15 @@
 clientT
 serverT
+bin/
+build/
+*.vscode
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
