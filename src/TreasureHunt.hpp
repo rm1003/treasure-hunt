@@ -4,7 +4,7 @@
 namespace TreasureHunt {
 
   const unsigned long NUM_TREASURES = 8;
-  const char TREASURES_DIR[] = "./objects";
+  const char TREASURES_DIR[] = "../objects";
 
   struct Position {
     int x;

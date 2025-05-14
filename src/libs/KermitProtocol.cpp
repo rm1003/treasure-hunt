@@ -10,11 +10,13 @@ extern "C" {
 
 CustomProtocol::PackageHandler::PackageHandler(char *netIntName) {
   this->sokt = new CustomSocket::RawSocket(netIntName);
+  this->currentPkg = &this->pkgs[0];
   this->SetInitMarkPkg();
+  this->lastIdx = 0;
 }
 
 void CustomProtocol::PackageHandler::SetInitMarkPkg() {
-  this->currentPkg.initMark = INIT_MARK;
+  this->currentPkg->initMark = INIT_MARK;
 }
 
 const char *CustomProtocol::NetworkHandler::GetEthIntName() {
@@ -48,4 +50,11 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
   // alguma coisa
   free((void*)ethIntName);
+
+  this->buffer = new unsigned char[DATA_BUFFER_SIZE];
+  this->bufferOffset = 0;
+}
+
+CustomProtocol::NetworkHandler::~NetworkHandler() {
+  delete[] this->buffer;
 }
