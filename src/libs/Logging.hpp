@@ -1,6 +1,8 @@
 #ifndef LOGGING_HPP_
 #define LOGGING_HPP_
 
+#include <cstdio>
+
 #define ERROR_PRINT(...)                 \
   {                                      \
     fprintf(stderr, "[ERROR] ");         \
