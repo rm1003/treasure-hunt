@@ -8,7 +8,8 @@ BIN_DIR := bin
 BIN_CLIENT := $(BIN_DIR)/src
 BIN_SERVER := $(BIN_DIR)/src
 BIN_TEST := $(BIN_DIR)/testing
-INCLUDE := -Isrc/libs
+INCLUDE := -Ilibs
+INCLUDE_TEST := -Isrc/libs
 
 # Arquivos fonte
 CLIENT_SOURCES := $(wildcard $(CLIENT_SRC)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
@@ -58,11 +59,11 @@ server: $(OBJ_SERVER)
 
 test_client: $(TEST_CLIENT_SRC) $(TEST_LIBS)
 	@mkdir -p $(BIN_TEST)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(TEST_CLIENT)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_TEST) $^ -o $(TEST_CLIENT)
 
 test_server: $(TEST_SERVER_SRC) $(TEST_LIBS)
 	@mkdir -p $(BIN_TEST)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(TEST_SERVER)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_TEST) $^ -o $(TEST_SERVER)
 
 
 # Regra genérica para arquivos .o
