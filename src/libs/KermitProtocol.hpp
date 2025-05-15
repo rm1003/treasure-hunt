@@ -62,10 +62,9 @@ namespace CustomProtocol {
     public:
       PackageHandler(char *netIntName);
       ~PackageHandler();
-      /* Initialize current package with index (idx), type (message type),
-       * data (pointer to data) and number of data bytes (<= 128) */
-      int InitPackage(unsigned char idx, unsigned char type, 
-                      unsigned char *data, size_t len);
+      /* Initialize current package with type (message type), data (pointer 
+       * to data) and number of data bytes (<= 128) */
+      int InitPackage(unsigned char type, unsigned char *data, size_t len);
       /* Send current package. Make sure to initialize it with InitPackage.
        * if NACK/ERROR is received, send previous package again */
       void SendPackage();

@@ -25,8 +25,7 @@ CustomProtocol::PackageHandler::~PackageHandler() {
 
 }
 
-int CustomProtocol::PackageHandler::InitPackage(unsigned char idx, 
-                                                unsigned char type, 
+int CustomProtocol::PackageHandler::InitPackage(unsigned char type, 
                                                 unsigned char *data, 
                                                 size_t len) {
   int ret;
