@@ -2,31 +2,35 @@
 #define RAWSOCKET_HPP_
 
 #include <arpa/inet.h>
-#include <cstddef>
 extern "C" {
 #include <net/ethernet.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
 #include <stdlib.h>
-#include <stdio.h> 
 }
 
 namespace CustomSocket {
 
   // Given in miliseconds
-  const unsigned long TIMEOUT_LEN = 100; 
+  const unsigned long TIMEOUT_LEN = 100;
   
   class RawSocket {
     private:
       int socketFd;
+      size_t fixedBufLen;
+      unsigned char *fixedBuf;
       
       int CreateSocket(char *netIntName);
       void SetRecvTimeout();
     public:
       RawSocket(char *netIntName);
       ~RawSocket();
-      int Send(char *buf, size_t len);
-      int Recv(char *buf, size_t len);
+      /* Set fixed number of bytes to be sent everytime Send is called. This
+       * implies that Recv also reads fixedBufLen bytes. This method also 
+       * allocates fixexBuf */
+      void SetFixedBufLen(size_t len);
+      int Send(void *ptr, size_t len);
+      int Recv(void *ptr, size_t len);
   };
 
 }

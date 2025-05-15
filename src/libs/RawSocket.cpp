@@ -1,5 +1,7 @@
 #include "RawSocket.hpp"
 #include <cstddef>
+#include <cstdio>
+#include <cstring>
 
 extern "C" {
 #include <sys/socket.h>
@@ -15,17 +17,27 @@ CustomSocket::RawSocket::RawSocket(char *ethInterfaceName) {
 
 CustomSocket::RawSocket::~RawSocket() {
   close(this->socketFd);
+  delete this->fixedBuf;
 }
 
-int CustomSocket::RawSocket::Send(char *str, size_t len) {
+void CustomSocket::RawSocket::SetFixedBufLen(size_t len) {
+  this->fixedBufLen = len;
+  this->fixedBuf = new unsigned char[this->fixedBufLen];
+}
+
+int CustomSocket::RawSocket::Send(void *ptr, size_t len) {
   int ret;
-  ret = send(this->socketFd, str, len, 0);
+  memcpy(this->fixedBuf, ptr, len);
+  ret = send(this->socketFd, this->fixedBuf, this->fixedBufLen, 0);
   return ret;
 }
 
-int CustomSocket::RawSocket::Recv(char *str, size_t len) {
+int CustomSocket::RawSocket::Recv(void *ptr, size_t len) {
   int ret;
-  ret = recv(this->socketFd, str, len, 0);
+  ret = recv(this->socketFd, this->fixedBuf, this->fixedBufLen, 0);
+  if (ret != -1) {
+    memcpy(ptr, this->fixedBuf, len);
+  }
   return ret;
 }
 
