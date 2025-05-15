@@ -14,8 +14,15 @@ namespace CustomProtocol {
   const unsigned char INIT_MARK = 0x7e;
   const unsigned long DATA_BUFFER_SIZE = 1 << 20;
   const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
+  
   // Given in miliseconds
   const unsigned long TIMEOUT_LEN = 100;
+
+  const int REPEATED_MSG = 1;
+  const int TIMEOUT_REACHED = 2;
+  const int ACK_OR_NACK_RECEIVED = 3;
+  const int INVALID_NEW_MSG = 4;
+  const int VALID_NEW_MSG = 5;
 
   enum MsgType {
     ACK = 0,          // reserved
@@ -68,19 +75,25 @@ namespace CustomProtocol {
       size_t GetCurrentPkgSize();
       /* Verify if bytes pointed by currentPkg represent a KermitPackage */
       bool IsMsgKermitPackage();
+      /* Return ERROR + 1 if type is invalid */
+      MsgType ConvertUCharToMsgType(unsigned char type);
     public:
       PackageHandler(char *netIntName);
       ~PackageHandler();
       /* Initialize current package with type (message type), data (pointer 
-       * to data) and number of data bytes (<= 128) */
+       * to data) and number of data bytes (<= 128). If there is no data to be
+       * sent fill data with NULL and len with 0 */
       int InitPackage(unsigned char type, unsigned char *data, size_t len);
       /* Send current package. Make sure to initialize it with InitPackage.
-       * if NACK/ERROR is received, send previous package again */
-      void SendPackage();
-      /* Receive package in currentPkg. Send ACK if everything is right and
-       * return; NACK if checksum does not match or ERROR if index is wrong and 
-       * and wait. This method implements timeout */
+       * It returns whatever RecvPackage returns after Send is called */
+      int SendPackage();
+      /* Receive package in currentPkg. This method implements timeout. It may
+       * return REPEATED_MSG, TIMEOUT_REACHED, ACK_OR_NACK_RECEIVED, 
+       * INVALID_NEW_MSG or VALID_NEW_MSG */
       int RecvPackage();
+      /* If one dont want to overwrite currentPkg with Recv/InitPackage, call
+       * this method: currentPkg will be then pointed by prevPkg */
+      void NextCurrentPkg();
       /* Get currentPkg.type */
       MsgType GetMsgTypeOfCurrentPkg();
       /* Copy currentPkg.data to ptr using memcpy and currentPkg.size to len */

@@ -34,20 +34,22 @@ CustomProtocol::PackageHandler::PackageHandler(char *netIntName) {
 }
 
 CustomProtocol::PackageHandler::~PackageHandler() {
-
+  delete this->sokt;
 }
 
 int CustomProtocol::PackageHandler::InitPackage(unsigned char type, 
                                                 unsigned char *data, 
                                                 size_t len) {
   if (len > DATA_SIZE) {
-    ERROR_PRINT("Data is too long to fit a package\n");
-    return 1;
+    ERROR_PRINT("Data is too long to fit a package. Exiting.\n");
+    exit(1);
   }
   this->currentPkg->type = type;
   this->currentPkg->idx = this->lastUsedIdx;
   this->currentPkg->size = len;
-  memcpy(this->currentPkg->data, data, len);
+  if (data != NULL) {
+    memcpy(this->currentPkg->data, data, len);
+  }
   this->ChecksumResolver();
 
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
@@ -55,44 +57,52 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   return 0;
 }
 
-void CustomProtocol::PackageHandler::SendPackage() {
+int CustomProtocol::PackageHandler::SendPackage() {
   int ret;
-  while(1) {
-    this->sokt->Send(this->currentPkg, this->GetCurrentPkgSize());
-    ret = this->RecvPackage();
-    if (ret != -1) {
-      if (this->GetMsgTypeOfCurrentPkg() == ACK) {
-        break;
-      } else if (this->GetMsgTypeOfCurrentPkg() == ERROR) {
-        ERROR_PRINT("Error in sequence. Logic done wrong\n");
-        exit(1);
-      }
-    }
-    this->currentPkg = this->prevPkg;q
-  }
-
+  this->sokt->Send(this->currentPkg, this->GetCurrentPkgSize());
+  return this->RecvPackage();
 }
 
 int CustomProtocol::PackageHandler::RecvPackage() {
   int ret;
   unsigned long init = timestamp();
 
-  this->prevPkg = this->currentPkg;
-  INC_MOD_K(this->currentPkgIdx, 2);
-  this->currentPkg = &this->pkgs[this->currentPkgIdx];
+  this->NextCurrentPkg();
   do {
     ret = this->sokt->Recv(this->currentPkg, sizeof(KermitPackage));
     if (ret == -1) {continue;}
     if (this->IsMsgKermitPackage()) {
-      return 0;
+      // Maybe more msg types are ACKS
+      if (this->GetMsgTypeOfCurrentPkg() == ACK  ||
+          this->GetMsgTypeOfCurrentPkg() == NACK ||
+          this->GetMsgTypeOfCurrentPkg() == OK_AND_ACK) {
+        DEBUG_PRINT("Got ACK or NACK.n");
+        return ACK_OR_NACK_RECEIVED;
+      }
+      if (this->currentPkg->idx == this->lastRecvIdx) {
+        DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n")
+        return REPEATED_MSG;
+      } 
+      if (this->VerifyChecksum()) {
+        DEBUG_PRINT("Valid new message arrived.\n");
+        return VALID_NEW_MSG;
+      } else {
+        DEBUG_PRINT("Invalid new message arrived.\n");
+        return INVALID_NEW_MSG;
+      }
     }
   } while (timestamp() - init < TIMEOUT_LEN);
-  
-  return -1;
+
+  return TIMEOUT_REACHED;
 }
 
 MsgType CustomProtocol::PackageHandler::GetMsgTypeOfCurrentPkg() {
-
+  MsgType val = this->ConvertUCharToMsgType(this->currentPkg->type);
+  if ((int)val == MsgType::ERROR + 1) {
+    ERROR_PRINT("Invalid enumerator type. Exiting.\n");
+    exit(1);
+  }
+  return val;
 }
 
 void CustomProtocol::PackageHandler::GetDataInCurrentPkg(unsigned char *ptr, 
@@ -113,7 +123,8 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
   sum += (sum >> sizeof(KermitPackage::checkSum));
   sum += this->currentPkg->type;
   sum += (sum >> sizeof(KermitPackage::checkSum));
-  while(offset < DATA_SIZE) {
+  // TODO verify this while
+  while(offset < this->currentPkg->size) {
     /* Gets type of KermitPackage::checkSum and casts this->currentPkg->data +
      * offset to a pointer to this type and then dereferences it */
     sum += *(decltype(KermitPackage::checkSum)*)(this->currentPkg->data + offset);
@@ -142,6 +153,21 @@ bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
 size_t CustomProtocol::PackageHandler::GetCurrentPkgSize() {
   size_t sizePkgNoData = sizeof(KermitPackage) - sizeof(KermitPackage::data);
   return sizePkgNoData + this->currentPkg->size;
+}
+
+MsgType CustomProtocol::PackageHandler::ConvertUCharToMsgType(unsigned char type) {
+  if (type > (unsigned char)MsgType::ERROR) {
+    ERROR_PRINT("Invalid type of package\n");
+    /* Return invalid MsgType value */
+    return (MsgType)(MsgType::ERROR + 1);
+  }
+  return (MsgType)type;
+}
+
+void CustomProtocol::PackageHandler::NextCurrentPkg() {
+  this->prevPkg = this->currentPkg;
+  INC_MOD_K(this->currentPkgIdx, 2);
+  this->currentPkg = &this->pkgs[this->currentPkgIdx];
 }
 
 //=================================================================//
