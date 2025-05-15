@@ -4,16 +4,18 @@
 #include "RawSocket.hpp"
 #include <cstddef>
 
-#define NEXT_IDX(idx) (idx + 1) & (1 << 5 - 1)
+#define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
 #define PREV_IDX(idx) (idx - 1)
 #define INC_MOD_K(idx, k) (++idx) % k
 
-const unsigned long DATA_SIZE = 128;
-const unsigned char INIT_MARK = 0x7e;
-const unsigned long DATA_BUFFER_SIZE = 1 << 20;
-const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
-
 namespace CustomProtocol {
+  
+  const unsigned long DATA_SIZE = 128;
+  const unsigned char INIT_MARK = 0x7e;
+  const unsigned long DATA_BUFFER_SIZE = 1 << 20;
+  const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
+  // Given in miliseconds
+  const unsigned long TIMEOUT_LEN = 100;
 
   enum MsgType {
     ACK = 0,          // reserved
@@ -49,16 +51,23 @@ namespace CustomProtocol {
       struct KermitPackage pkgs[2];
       struct KermitPackage *prevPkg;
       struct KermitPackage *currentPkg;
+      unsigned char currentPkgIdx;
       unsigned char lastRecvIdx;
       unsigned char lastUsedIdx;
 
       /* Fill currentPkg.initMark with 01111110 binary sequence */
       void SetInitMarkPkg();
-      /* Filter for bytes that may be discard signal to network chip */
-      void FilterPkg();
-      /* Fill checksum field. Make sure to call this after all other fields
-       * were loaded */
+      /* Append bytes that may be discard signal to network chip with 0xff */
+      void Append0xffToPkg();
+      /* Remove 0xff sequence that was inserted before package was sent */
+      void Remove0xffInsertedInPkg();
+      /* Fill checksum field of currentPkg. Make sure to call this after all 
+       * other fields were loaded */
       void ChecksumResolver();
+      /* size of KermitPackage - DATA_SIZE + currentPkg.size */
+      size_t GetCurrentPkgSize();
+      /* Verify if bytes pointed by currentPkg represent a KermitPackage */
+      bool IsMsgKermitPackage();
     public:
       PackageHandler(char *netIntName);
       ~PackageHandler();
@@ -76,6 +85,8 @@ namespace CustomProtocol {
       MsgType GetMsgTypeOfCurrentPkg();
       /* Copy currentPkg.data to ptr using memcpy and currentPkg.size to len */
       void GetDataInCurrentPkg(unsigned char *ptr, size_t *len);
+      /* Verify checksum field of currentPkg */
+      bool VerifyChecksum();
   };
 
   class NetworkHandler {
