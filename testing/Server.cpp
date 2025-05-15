@@ -1,7 +1,7 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
-#include "../src/libs/RawSocket.hpp"
-#include "../src/libs/Logging.hpp"
+#include "RawSocket.hpp"
+#include "Logging.hpp"
 #include <cstdio>
 
 #include <cstring>

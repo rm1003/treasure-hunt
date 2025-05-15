@@ -8,11 +8,16 @@ BIN_DIR := bin
 BIN_CLIENT := $(BIN_DIR)/src
 BIN_SERVER := $(BIN_DIR)/src
 BIN_TEST := $(BIN_DIR)/testing
+INCLUDE := -Isrc/libs
 
 # Arquivos fonte
 CLIENT_SOURCES := $(wildcard $(CLIENT_SRC)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
 SERVER_SOURCES := $(wildcard $(SERVER_SRC)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
-TEST_SOURCES := $(wildcard $(TEST_DIR)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
+
+# Para arquivo de Testes
+TEST_CLIENT_SRC := testing/Client.cpp
+TEST_SERVER_SRC := testing/Server.cpp
+TEST_LIBS := $(wildcard $(LIBS_SRC)/*.cpp)
 
 # Objetos
 OBJ_CLIENT := $(CLIENT_SOURCES:.cpp=.o)
@@ -45,22 +50,19 @@ debug: test_client test_server
 
 client: $(OBJ_CLIENT)
 	@mkdir -p $(BIN_CLIENT)
-	$(CXX) $(CXXFLAGS) $^ -o $(CLIENT)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(CLIENT)
 
 server: $(OBJ_SERVER)
 	@mkdir -p $(BIN_SERVER)
-	$(CXX) $(CXXFLAGS) $^ -o $(SERVER)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(SERVER)
 
-#test: $(OBJ_TEST)
-#	@mkdir -p $(BIN_TEST)
-#	$(CXX) $(CXXFLAGS) $^ -o $(TEST)
-test_client: testing/Client.cpp $(LIBS_SRC)/RawSocket.cpp $(LIBS_SRC)/KermitProtocol.cpp
+test_client: $(TEST_CLIENT_SRC) $(TEST_LIBS)
 	@mkdir -p $(BIN_TEST)
-	$(CXX) $(CXXFLAGS) $^ -o $(TEST_CLIENT)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(TEST_CLIENT)
 
-test_server: testing/Server.cpp $(LIBS_SRC)/RawSocket.cpp $(LIBS_SRC)/KermitProtocol.cpp
+test_server: $(TEST_SERVER_SRC) $(TEST_LIBS)
 	@mkdir -p $(BIN_TEST)
-	$(CXX) $(CXXFLAGS) $^ -o $(TEST_SERVER)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(TEST_SERVER)
 
 
 # Regra genérica para arquivos .o
