@@ -15,7 +15,7 @@ const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
 
 namespace CustomProtocol {
 
-  enum MsgTypes {
+  enum MsgType {
     ACK = 0,          // reserved
     NACK,             // reserved
     OK_AND_ACK,       // reserved
@@ -74,7 +74,7 @@ namespace CustomProtocol {
        * and wait. This method implements timeout */
       int RecvPackage();
       /* Get currentPkg.type */
-      MsgTypes GetMsgTypeOfCurrentPkg();
+      MsgType GetMsgTypeOfCurrentPkg();
       /* Copy currentPkg.data to ptr using memcpy and currentPkg.size to len */
       void GetDataInCurrentPkg(unsigned char *ptr, size_t *len);
   };
@@ -106,7 +106,7 @@ namespace CustomProtocol {
       void SendDataInPtr(void *ptr, size_t len);
       /* Send message indicated by msg. Do not use to send reserved message
        * types */
-      void SendMsg(MsgTypes msg);
+      void SendMsg(MsgType msg);
       /* Return pointer to read data. Make sure to duplicate this data */
       const unsigned char *ReadIncomingData();
   };

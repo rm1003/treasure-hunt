@@ -8,16 +8,56 @@ extern "C" {
 #include <stdlib.h>
 }
 
+using CustomProtocol::MsgType;
+
+//=================================================================//
+// CustomProtocol::PackageHandler
+//=================================================================//
+
 CustomProtocol::PackageHandler::PackageHandler(char *netIntName) {
   this->sokt = new CustomSocket::RawSocket(netIntName);
   this->currentPkg = &this->pkgs[0];
   this->SetInitMarkPkg();
-  this->lastIdx = 0;
+  this->lastUsedIdx = 0;
 }
+
+CustomProtocol::PackageHandler::~PackageHandler() {
+
+}
+
+int CustomProtocol::PackageHandler::InitPackage(unsigned char idx, 
+                                                unsigned char type, 
+                                                unsigned char *data, 
+                                                size_t len) {
+  int ret;
+
+  return 0;
+}
+
+void CustomProtocol::PackageHandler::SendPackage() {
+  
+}
+
+int CustomProtocol::PackageHandler::RecvPackage() {
+  return 0;
+}
+
+MsgType CustomProtocol::PackageHandler::GetMsgTypeOfCurrentPkg() {
+
+}
+
+void CustomProtocol::PackageHandler::GetDataInCurrentPkg(unsigned char *ptr, 
+                                                         size_t *len) {
+  
+} 
 
 void CustomProtocol::PackageHandler::SetInitMarkPkg() {
   this->currentPkg->initMark = INIT_MARK;
 }
+
+//=================================================================//
+// CustomProtocol::NetworkHandler
+//=================================================================//
 
 const char *CustomProtocol::NetworkHandler::GetEthIntName() {
   struct if_nameindex *ifArr, *ifIt;
