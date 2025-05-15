@@ -1,4 +1,5 @@
 #include "RawSocket.hpp"
+#include "Logging.hpp"
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -46,7 +47,7 @@ int CustomSocket::RawSocket::CreateSocket(char *nome_interface_rede) {
   // Cria arquivo para o socket sem qualquer protocolo
   this->socketFd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
   if (this->socketFd == -1) {
-    fprintf(stderr, "Erro ao criar socket: Verifique se você é root!\n");
+    ERROR_PRINT("Erro ao criar socket: Verifique se você é root!\n")
     return 1;
   }
 

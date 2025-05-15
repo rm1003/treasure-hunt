@@ -20,9 +20,8 @@ namespace CustomProtocol {
 
   const int REPEATED_MSG = 1;
   const int TIMEOUT_REACHED = 2;
-  const int ACK_OR_NACK_RECEIVED = 3;
+  const int VALID_NEW_MSG = 3;
   const int INVALID_NEW_MSG = 4;
-  const int VALID_NEW_MSG = 5;
 
   enum MsgType {
     ACK = 0,          // reserved
@@ -72,11 +71,12 @@ namespace CustomProtocol {
        * other fields were loaded */
       void ChecksumResolver();
       /* size of KermitPackage - DATA_SIZE + currentPkg.size */
-      size_t GetCurrentPkgSize();
+      size_t GetPkgSize(struct KermitPackage *pkg);
       /* Verify if bytes pointed by currentPkg represent a KermitPackage */
       bool IsMsgKermitPackage();
-      /* Return ERROR + 1 if type is invalid */
-      MsgType ConvertUCharToMsgType(unsigned char type);
+      /* Send current package. Make sure to initialize it with InitPackage.
+       * It returns whatever RecvPackage returns after Send is called */
+      int SendPackage(struct KermitPackage *pkg);
     public:
       PackageHandler(char *netIntName);
       ~PackageHandler();
@@ -84,20 +84,18 @@ namespace CustomProtocol {
        * to data) and number of data bytes (<= 128). If there is no data to be
        * sent fill data with NULL and len with 0 */
       int InitPackage(unsigned char type, unsigned char *data, size_t len);
-      /* Send current package. Make sure to initialize it with InitPackage.
-       * It returns whatever RecvPackage returns after Send is called */
-      int SendPackage();
+      /* Send package pointed by currentPkg */
+      int SendCurrentPkg();
+      /* Send package pointed by prevPkg */
+      int SendPreviousPkg();
       /* Receive package in currentPkg. This method implements timeout. It may
-       * return REPEATED_MSG, TIMEOUT_REACHED, ACK_OR_NACK_RECEIVED, 
-       * INVALID_NEW_MSG or VALID_NEW_MSG */
+       * return REPEATED_MSG, TIMEOUT_REACHED, VALID_NEW_MSG or INVALID_NEW_MSG. */
       int RecvPackage();
       /* If one dont want to overwrite currentPkg with Recv/InitPackage, call
        * this method: currentPkg will be then pointed by prevPkg */
-      void NextCurrentPkg();
-      /* Get currentPkg.type */
-      MsgType GetMsgTypeOfCurrentPkg();
-      /* Copy currentPkg.data to ptr using memcpy and currentPkg.size to len */
-      void GetDataInCurrentPkg(unsigned char *ptr, size_t *len);
+      void SwapPkg();
+      /* It returns const pointer to last received/initiated package */
+      const struct KermitPackage *GetCurrentPkg();
       /* Verify checksum field of currentPkg */
       bool VerifyChecksum();
   };
@@ -122,14 +120,13 @@ namespace CustomProtocol {
       NetworkHandler();
       ~NetworkHandler();
       /* Write incoming data to file until END_OF_FILE message is read */
-      void WriteDataInFile(char *filePath);
+      void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
-      void SendDataInFile(char *filePath);
+      void SendFile(char *filePath);
       /* Send len bytes pointer by ptr void pointer */
-      void SendDataInPtr(void *ptr, size_t len);
-      /* Send message indicated by msg. Do not use to send reserved message
-       * types */
-      void SendMsg(MsgType msg);
+      void SendGenericData(MsgType msg, void *ptr, size_t len);
+      /* Recei */
+      MsgType RecvGenericData(void **ptr, size_t *len);
       /* Return pointer to read data. Make sure to duplicate this data */
       const unsigned char *ReadIncomingData();
   };

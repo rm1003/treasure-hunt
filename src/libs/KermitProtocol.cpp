@@ -12,6 +12,7 @@ extern "C" {
 }
 
 using CustomProtocol::MsgType;
+using CustomProtocol::KermitPackage;
 
 unsigned long timestamp() {
   // Static to avoid multiple allocations
@@ -57,57 +58,45 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   return 0;
 }
 
-int CustomProtocol::PackageHandler::SendPackage() {
-  int ret;
-  this->sokt->Send(this->currentPkg, this->GetCurrentPkgSize());
-  return this->RecvPackage();
+int CustomProtocol::PackageHandler::SendCurrentPkg() {
+  return this->SendPackage(this->currentPkg);
+}
+
+int CustomProtocol::PackageHandler::SendPreviousPkg() {
+  return this->SendPackage(this->prevPkg);
 }
 
 int CustomProtocol::PackageHandler::RecvPackage() {
   int ret;
   unsigned long init = timestamp();
 
-  this->NextCurrentPkg();
   do {
     ret = this->sokt->Recv(this->currentPkg, sizeof(KermitPackage));
     if (ret == -1) {continue;}
     if (this->IsMsgKermitPackage()) {
-      // Maybe more msg types are ACKS
-      if (this->GetMsgTypeOfCurrentPkg() == ACK  ||
-          this->GetMsgTypeOfCurrentPkg() == NACK ||
-          this->GetMsgTypeOfCurrentPkg() == OK_AND_ACK) {
-        DEBUG_PRINT("Got ACK or NACK.n");
-        return ACK_OR_NACK_RECEIVED;
+      if (!this->VerifyChecksum()) {
+        DEBUG_PRINT("Invalid new message arrived.\n");
+        return INVALID_NEW_MSG;
       }
       if (this->currentPkg->idx == this->lastRecvIdx) {
         DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n")
         return REPEATED_MSG;
-      } 
-      if (this->VerifyChecksum()) {
-        DEBUG_PRINT("Valid new message arrived.\n");
-        return VALID_NEW_MSG;
-      } else {
-        DEBUG_PRINT("Invalid new message arrived.\n");
-        return INVALID_NEW_MSG;
       }
+      return VALID_NEW_MSG;
     }
   } while (timestamp() - init < TIMEOUT_LEN);
 
   return TIMEOUT_REACHED;
 }
 
-MsgType CustomProtocol::PackageHandler::GetMsgTypeOfCurrentPkg() {
-  MsgType val = this->ConvertUCharToMsgType(this->currentPkg->type);
-  if ((int)val == MsgType::ERROR + 1) {
-    ERROR_PRINT("Invalid enumerator type. Exiting.\n");
-    exit(1);
-  }
-  return val;
+void CustomProtocol::PackageHandler::SwapPkg() {
+  this->prevPkg = this->currentPkg;
+  INC_MOD_K(this->currentPkgIdx, 2);
+  this->currentPkg = &this->pkgs[this->currentPkgIdx];
 }
 
-void CustomProtocol::PackageHandler::GetDataInCurrentPkg(unsigned char *ptr, 
-                                                         size_t *len) {
-  
+const struct KermitPackage* CustomProtocol::PackageHandler::GetCurrentPkg() {
+  return this->currentPkg;
 }
 
 void CustomProtocol::PackageHandler::SetInitMarkPkg() {
@@ -123,7 +112,6 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
   sum += (sum >> sizeof(KermitPackage::checkSum));
   sum += this->currentPkg->type;
   sum += (sum >> sizeof(KermitPackage::checkSum));
-  // TODO verify this while
   while(offset < this->currentPkg->size) {
     /* Gets type of KermitPackage::checkSum and casts this->currentPkg->data +
      * offset to a pointer to this type and then dereferences it */
@@ -150,24 +138,14 @@ bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
   return (currentPkg->initMark == INIT_MARK);
 }
 
-size_t CustomProtocol::PackageHandler::GetCurrentPkgSize() {
+size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
   size_t sizePkgNoData = sizeof(KermitPackage) - sizeof(KermitPackage::data);
-  return sizePkgNoData + this->currentPkg->size;
+  return sizePkgNoData + pkg->size;
 }
 
-MsgType CustomProtocol::PackageHandler::ConvertUCharToMsgType(unsigned char type) {
-  if (type > (unsigned char)MsgType::ERROR) {
-    ERROR_PRINT("Invalid type of package\n");
-    /* Return invalid MsgType value */
-    return (MsgType)(MsgType::ERROR + 1);
-  }
-  return (MsgType)type;
-}
-
-void CustomProtocol::PackageHandler::NextCurrentPkg() {
-  this->prevPkg = this->currentPkg;
-  INC_MOD_K(this->currentPkgIdx, 2);
-  this->currentPkg = &this->pkgs[this->currentPkgIdx];
+int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
+  int ret;
+  return this->sokt->Send(pkg, this->GetPkgSize(pkg));
 }
 
 //=================================================================//
