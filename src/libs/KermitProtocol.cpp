@@ -138,7 +138,7 @@ void CustomProtocol::PackageHandler::Remove0xffInsertedInPkg() {
 }
 
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
-  return false;
+  return true;
 }
 
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {

@@ -44,4 +44,5 @@ int main() {
   pkgHandler.InitPackage(MsgType::DATA, string, strlen(string) + 1);
   int ret = pkgHandler.SendCurrentPkg();
   DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
+  free((void*)ethName);
 }
