@@ -55,12 +55,10 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   this->currentPkg->size = len;
   if (data != NULL) {
     memcpy(this->currentPkg->data, data, len);
-    DEBUG_PRINT("Data copied to currentPkg data [InitPackage].\n");
   }
   this->ChecksumResolver();
-  DEBUG_PRINT("Solver for checksum [InitPackage].\n");
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
-  DEBUG_PRINT("Updating last used index [InitPackage].\n");
+  DEBUG_PRINT("Updated last used index [%d].\n", this->lastUsedIdx);
 
   return 0;
 }
@@ -76,17 +74,19 @@ int CustomProtocol::PackageHandler::SendPreviousPkg() {
 int CustomProtocol::PackageHandler::RecvPackage() {
   int ret;
   unsigned long init = timestamp();
+  unsigned char savedLastIndex;
 
   do {
     ret = this->sokt->Recv(this->currentPkg, sizeof(KermitPackage));
     if (ret == -1) {continue;}
     if (this->IsMsgKermitPackage()) {
+      savedLastIndex = this->lastRecvIdx;
       this->lastRecvIdx = this->currentPkg->idx;
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
       }
-      if (this->currentPkg->idx == this->lastRecvIdx) {
+      if (savedLastIndex == this->lastRecvIdx) {
         DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n")
         return REPEATED_MSG;
       }
