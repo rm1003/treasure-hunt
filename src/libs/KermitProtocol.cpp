@@ -11,7 +11,6 @@ extern "C" {
 #include <sys/time.h>
 }
 
-using CustomProtocol::MsgType;
 using CustomProtocol::KermitPackage;
 
 unsigned long timestamp() {
@@ -25,13 +24,19 @@ unsigned long timestamp() {
 // CustomProtocol::PackageHandler
 //=================================================================//
 
-CustomProtocol::PackageHandler::PackageHandler(char *netIntName) {
+CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   this->sokt = new CustomSocket::RawSocket(netIntName);
+  DEBUG_PRINT("Created new Raw Socket.\n");
   this->sokt->SetFixedBufLen(sizeof(KermitPackage));
+  DEBUG_PRINT("Set Raw Socket fixed buffer len to KermitPackage size.\n");
   this->currentPkgIdx = 0;
+  DEBUG_PRINT("Set current package index to 0.\n");
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
+  DEBUG_PRINT("Set initial current package.\n");
   this->SetInitMarkPkg();
+  DEBUG_PRINT("Set message init mark.\n");
   this->lastUsedIdx = 0;
+  DEBUG_PRINT("Set last used index to 0.\n");
 }
 
 CustomProtocol::PackageHandler::~PackageHandler() {
@@ -39,7 +44,7 @@ CustomProtocol::PackageHandler::~PackageHandler() {
 }
 
 int CustomProtocol::PackageHandler::InitPackage(unsigned char type, 
-                                                unsigned char *data, 
+                                                void *data, 
                                                 size_t len) {
   if (len > DATA_SIZE) {
     ERROR_PRINT("Data is too long to fit a package. Exiting.\n");
@@ -50,10 +55,12 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   this->currentPkg->size = len;
   if (data != NULL) {
     memcpy(this->currentPkg->data, data, len);
+    DEBUG_PRINT("Data copied to currentPkg data [InitPackage].\n");
   }
   this->ChecksumResolver();
-
+  DEBUG_PRINT("Solver for checksum [InitPackage].\n");
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
+  DEBUG_PRINT("Updating last used index [InitPackage].\n");
 
   return 0;
 }
@@ -152,7 +159,9 @@ int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
 //=================================================================//
 
 const char *CustomProtocol::NetworkHandler::GetEthIntName() {
-  struct if_nameindex *ifArr, *ifIt;
+  struct if_nameindex *ifArr;
+  struct if_nameindex *ifIt;
+  const char *ptr;
 
   ifArr = if_nameindex();
   if (!ifArr) {
@@ -161,16 +170,11 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
   }
 
   for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
-    int notEqualEth = strcmp(ifIt->if_name, "eth");
-    if (!notEqualEth) {
+    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
+      ptr = strdup(ifIt->if_name);
       if_freenameindex(ifArr);
-      return strdup(ifIt->if_name);
+      return ptr;
     }
-    int notEqualEnp = strcmp(ifIt->if_name, "enp");
-    if (!notEqualEnp) {
-      if_freenameindex(ifArr);
-      return strdup(ifIt->if_name);
-    } 
   }
 
   if_freenameindex(ifArr);

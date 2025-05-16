@@ -9,7 +9,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-CustomSocket::RawSocket::RawSocket(char *ethInterfaceName) {
+CustomSocket::RawSocket::RawSocket(const char *ethInterfaceName) {
   if (this->CreateSocket(ethInterfaceName)) {
     exit(1);
   }
@@ -42,7 +42,7 @@ int CustomSocket::RawSocket::Recv(void *ptr, size_t len) {
   return ret;
 }
 
-int CustomSocket::RawSocket::CreateSocket(char *nome_interface_rede) {
+int CustomSocket::RawSocket::CreateSocket(const char *nome_interface_rede) {
   int ret;
   // Cria arquivo para o socket sem qualquer protocolo
   this->socketFd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));

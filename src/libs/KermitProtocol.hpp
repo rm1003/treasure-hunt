@@ -78,12 +78,12 @@ namespace CustomProtocol {
        * It returns whatever RecvPackage returns after Send is called */
       int SendPackage(struct KermitPackage *pkg);
     public:
-      PackageHandler(char *netIntName);
+      PackageHandler(const char *netIntName);
       ~PackageHandler();
       /* Initialize current package with type (message type), data (pointer 
        * to data) and number of data bytes (<= 128). If there is no data to be
        * sent fill data with NULL and len with 0 */
-      int InitPackage(unsigned char type, unsigned char *data, size_t len);
+      int InitPackage(unsigned char type, void *data, size_t len);
       /* Send package pointed by currentPkg */
       int SendCurrentPkg();
       /* Send package pointed by prevPkg */

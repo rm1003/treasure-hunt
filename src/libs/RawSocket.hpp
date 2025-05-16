@@ -20,10 +20,10 @@ namespace CustomSocket {
       size_t fixedBufLen;
       unsigned char *fixedBuf;
       
-      int CreateSocket(char *netIntName);
+      int CreateSocket(const char *netIntName);
       void SetRecvTimeout();
     public:
-      RawSocket(char *netIntName);
+      RawSocket(const char *netIntName);
       ~RawSocket();
       /* Set fixed number of bytes to be sent everytime Send is called. This
        * implies that Recv also reads fixedBufLen bytes. This method also 
