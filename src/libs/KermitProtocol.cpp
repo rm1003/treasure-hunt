@@ -91,7 +91,7 @@ int CustomProtocol::PackageHandler::RecvPackage() {
 
 void CustomProtocol::PackageHandler::SwapPkg() {
   this->prevPkg = this->currentPkg;
-  INC_MOD_K(this->currentPkgIdx, 2);
+  this->currentPkgIdx = INC_MOD_K(this->currentPkgIdx, 2);
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
 }
 
@@ -131,7 +131,7 @@ void CustomProtocol::PackageHandler::Remove0xffInsertedInPkg() {
 }
 
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
-
+  return false;
 }
 
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
@@ -144,7 +144,6 @@ size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
 }
 
 int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
-  int ret;
   return this->sokt->Send(pkg, this->GetPkgSize(pkg));
 }
 

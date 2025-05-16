@@ -6,7 +6,7 @@
 
 #define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
 #define PREV_IDX(idx) (idx - 1)
-#define INC_MOD_K(idx, k) (++idx) % k
+#define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
   
@@ -44,9 +44,9 @@ namespace CustomProtocol {
 
   struct KermitPackage {
     unsigned char initMark;
-    unsigned char size    : 7;
-    unsigned char idx     : 5;
-    unsigned char type    : 4;
+    unsigned short size    : 7;
+    unsigned short idx     : 5;
+    unsigned short type    : 4;
     unsigned char checkSum;
     unsigned char data[DATA_SIZE];
   }__attribute__((packed));
