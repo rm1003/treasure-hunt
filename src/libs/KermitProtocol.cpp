@@ -81,6 +81,7 @@ int CustomProtocol::PackageHandler::RecvPackage() {
     ret = this->sokt->Recv(this->currentPkg, sizeof(KermitPackage));
     if (ret == -1) {continue;}
     if (this->IsMsgKermitPackage()) {
+      this->lastRecvIdx = this->currentPkg->idx;
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;

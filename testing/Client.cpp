@@ -42,9 +42,14 @@ int main() {
   }
   CustomProtocol::PackageHandler pkgHandler(ethName);
 
-  int ret = pkgHandler.RecvPackage();
-  DEBUG_PRINT("RecvPackage ret [%d]\n", ret);
-  const struct KermitPackage* pkg = pkgHandler.GetCurrentPkg();
-  DEBUG_PRINT("Package data received [%s]\n", pkg->data);
+  while(1) {
+    int ret = pkgHandler.RecvPackage();
+    DEBUG_PRINT("RecvPackage ret [%d]\n", ret);
+    if (ret == CustomProtocol::TIMEOUT_REACHED) {
+      continue;
+    }
+    const struct KermitPackage* pkg = pkgHandler.GetCurrentPkg();
+    DEBUG_PRINT("Package data received [%s]\n", pkg->data);
+  }
   free((void*)ethName);
 }

@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include <cstring>
+#include <unistd.h>
 
 using CustomProtocol::MsgType;
 
@@ -42,7 +43,10 @@ int main() {
   CustomProtocol::PackageHandler pkgHandler(ethName);
   char string[] = "Oi meu nome é fernando, essa eh uma mensagem!";
   pkgHandler.InitPackage(MsgType::DATA, string, strlen(string) + 1);
-  int ret = pkgHandler.SendCurrentPkg();
-  DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
+  while(1) {
+    int ret = pkgHandler.SendCurrentPkg();
+    sleep(1);
+    DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
+  }
   free((void*)ethName);
 }
