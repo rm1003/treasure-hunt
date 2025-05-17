@@ -27,7 +27,9 @@ unsigned long timestamp() {
 CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   this->sokt = new CustomSocket::RawSocket(netIntName);
   DEBUG_PRINT("Created new Raw Socket.\n");
-  this->sokt->SetFixedBufLen(sizeof(KermitPackage));
+  /* Setting fixed buf len to be double the size of a KermitPackage as
+   * 0xff bytes must be inserted after every 0x88/0x81 sequence */
+  this->sokt->SetFixedBufLen(2 * sizeof(KermitPackage));
   DEBUG_PRINT("Set Raw Socket fixed buffer len to KermitPackage size.\n");
   this->currentPkgIdx = 0;
   DEBUG_PRINT("Set current package index to 0.\n");
@@ -130,8 +132,22 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
   this->currentPkg->checkSum = (unsigned char)sum;
 }
 
-void CustomProtocol::PackageHandler::Append0xffToPkg() {
+void CustomProtocol::PackageHandler::Append0xffToPkg(struct KermitPackage *pkg) {
+  static unsigned char aux[sizeof(KermitPackage) * 2];
+  unsigned char *pkgBytes = (unsigned char *)(pkg);
+  unsigned long pkgIt;
+  unsigned long auxIt;
+  unsigned long pkgSize = this->GetPkgSize(pkg);
+  
+  for (pkgIt = 0, auxIt = 0; pkgIt < pkgSize; auxIt++, pkgIt++) {
+    aux[auxIt] = pkgBytes[pkgIt];
+    if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
+      aux[++auxIt] = 0xff;
+    }
+  }
 
+  DEBUG_PRINT("Final aux it value [%lu]\n", auxIt);
+  DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
 void CustomProtocol::PackageHandler::Remove0xffInsertedInPkg() {

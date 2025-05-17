@@ -64,9 +64,9 @@ namespace CustomProtocol {
       /* Fill currentPkg.initMark with 01111110 binary sequence */
       void SetInitMarkPkg();
       /* Append bytes that may be discard signal to network chip with 0xff */
-      void Append0xffToPkg();
+      void Append0xffToPkg(struct KermitPackage *pkg);
       /* Remove 0xff sequence that was inserted before package was sent */
-      void Remove0xffInsertedInPkg();
+      void Remove0xffInsertedInPkg(struct KermitPackage *pkg);
       /* Fill checksum field of currentPkg. Make sure to call this after all 
        * other fields were loaded */
       void ChecksumResolver();
