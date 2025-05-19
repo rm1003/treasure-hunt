@@ -131,7 +131,7 @@ namespace CustomProtocol {
       NetworkHandler();
       ~NetworkHandler();
       /* Set status to STATUS_RECEIVER or STATUS_SENDER */
-      int setInitialStatus(int status);
+      int SetInitialStatus(int status);
       /* Write incoming data to file until END_OF_FILE message is read */
       void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
