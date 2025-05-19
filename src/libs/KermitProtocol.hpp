@@ -4,18 +4,26 @@
 #include "RawSocket.hpp"
 #include <cstddef>
 
-#define NEXT_IDX(idx) (idx + 1) & (1 << 5 - 1)
+#define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
 #define PREV_IDX(idx) (idx - 1)
-#define INC_MOD_K(idx, k) (++idx) % k
-
-const unsigned long DATA_SIZE = 128;
-const unsigned char INIT_MARK = 0x7e;
-const unsigned long DATA_BUFFER_SIZE = 1 << 20;
-const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
+#define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
+  
+  const unsigned long DATA_SIZE = 128;
+  const unsigned char INIT_MARK = 0x7e;
+  const unsigned long DATA_BUFFER_SIZE = 1 << 20;
+  const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
+  
+  // Given in miliseconds
+  const unsigned long TIMEOUT_LEN = 100;
 
-  enum MsgTypes {
+  const int REPEATED_MSG = 1;
+  const int TIMEOUT_REACHED = 2;
+  const int VALID_NEW_MSG = 3;
+  const int INVALID_NEW_MSG = 4;
+
+  enum MsgType {
     ACK = 0,          // reserved
     NACK,             // reserved
     OK_AND_ACK,       // reserved
@@ -36,12 +44,16 @@ namespace CustomProtocol {
 
   struct KermitPackage {
     unsigned char initMark;
-    unsigned char size    : 7;
-    unsigned char idx     : 5;
-    unsigned char type    : 4;
+    unsigned short size    : 7;
+    unsigned short idx     : 5;
+    unsigned short type    : 4;
     unsigned char checkSum;
     unsigned char data[DATA_SIZE];
   }__attribute__((packed));
+
+  /* Setting fixed buf len to be double the size of a KermitPackage as
+   * 0xff bytes must be inserted after every 0x88/0x81 sequence */
+  const unsigned long MAX_PACKAGE_SIZE = sizeof(KermitPackage) * 2;
 
   class PackageHandler {
     private:
@@ -49,34 +61,50 @@ namespace CustomProtocol {
       struct KermitPackage pkgs[2];
       struct KermitPackage *prevPkg;
       struct KermitPackage *currentPkg;
+      unsigned char rawBytes[MAX_PACKAGE_SIZE];
+      unsigned char currentPkgIdx;
       unsigned char lastRecvIdx;
       unsigned char lastUsedIdx;
 
       /* Fill currentPkg.initMark with 01111110 binary sequence */
       void SetInitMarkPkg();
-      /* Filter for bytes that may be discard signal to network chip */
-      void FilterPkg();
-      /* Fill checksum field. Make sure to call this after all other fields
-       * were loaded */
-      void ChecksumResolver();
-    public:
-      PackageHandler(char *netIntName);
-      ~PackageHandler();
-      /* Initialize current package with index (idx), type (message type),
-       * data (pointer to data) and number of data bytes (<= 128) */
-      int InitPackage(unsigned char idx, unsigned char type, 
-                      unsigned char *data, size_t len);
+      /* Append bytes that may be discard signal to network chip with 0xff.
+       * It writes modified pkg in rawBytes array */
+      void Append0xff(struct KermitPackage *pkg);
+      /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
+       * rawBytes array and writes to pkg */
+      void Remove0xff(struct KermitPackage *pkg);
+      /* Return checksum. Make sure to call this after all other fields were 
+       * loaded */
+      unsigned char ChecksumResolver();
+      /* size of KermitPackage - DATA_SIZE + currentPkg.size */
+      size_t GetPkgSize(struct KermitPackage *pkg);
+      /* Verify if bytes pointed by currentPkg represent a KermitPackage */
+      bool IsMsgKermitPackage();
       /* Send current package. Make sure to initialize it with InitPackage.
-       * if NACK/ERROR is received, send previous package again */
-      void SendPackage();
-      /* Receive package in currentPkg. Send ACK if everything is right and
-       * return; NACK if checksum does not match or ERROR if index is wrong and 
-       * and wait. This method implements timeout */
+       * It returns whatever RecvPackage returns after Send is called */
+      int SendPackage(struct KermitPackage *pkg);
+    public:
+      PackageHandler(const char *netIntName);
+      ~PackageHandler();
+      /* Initialize current package with type (message type), data (pointer 
+       * to data) and number of data bytes (<= 128). If there is no data to be
+       * sent fill data with NULL and len with 0 */
+      int InitPackage(unsigned char type, void *data, size_t len);
+      /* Send package pointed by currentPkg */
+      int SendCurrentPkg();
+      /* Send package pointed by prevPkg */
+      int SendPreviousPkg();
+      /* Receive package in currentPkg. This method implements timeout. It may
+       * return REPEATED_MSG, TIMEOUT_REACHED, VALID_NEW_MSG or INVALID_NEW_MSG. */
       int RecvPackage();
-      /* Get currentPkg.type */
-      MsgTypes GetMsgTypeOfCurrentPkg();
-      /* Copy currentPkg.data to ptr using memcpy and currentPkg.size to len */
-      void GetDataInCurrentPkg(unsigned char *ptr, size_t *len);
+      /* If one dont want to overwrite currentPkg with Recv/InitPackage, call
+       * this method: currentPkg will be then pointed by prevPkg */
+      void SwapPkg();
+      /* It returns const pointer to last received/initiated package */
+      const struct KermitPackage *GetCurrentPkg();
+      /* Verify checksum field of currentPkg */
+      bool VerifyChecksum();
   };
 
   class NetworkHandler {
@@ -99,14 +127,13 @@ namespace CustomProtocol {
       NetworkHandler();
       ~NetworkHandler();
       /* Write incoming data to file until END_OF_FILE message is read */
-      void WriteDataInFile(char *filePath);
+      void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
-      void SendDataInFile(char *filePath);
+      void SendFile(char *filePath);
       /* Send len bytes pointer by ptr void pointer */
-      void SendDataInPtr(void *ptr, size_t len);
-      /* Send message indicated by msg. Do not use to send reserved message
-       * types */
-      void SendMsg(MsgTypes msg);
+      void SendGenericData(MsgType msg, void *ptr, size_t len);
+      /* Recei */
+      MsgType RecvGenericData(void **ptr, size_t *len);
       /* Return pointer to read data. Make sure to duplicate this data */
       const unsigned char *ReadIncomingData();
   };

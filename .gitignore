@@ -1,6 +1,6 @@
 clientT
 serverT
-testing/
+# testing/
 bin/
 build/
 *.vscode

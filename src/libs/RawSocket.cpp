@@ -1,12 +1,15 @@
 #include "RawSocket.hpp"
+#include "Logging.hpp"
 #include <cstddef>
+#include <cstdio>
+#include <cstring>
 
 extern "C" {
 #include <sys/socket.h>
 #include <unistd.h>
 }
 
-CustomSocket::RawSocket::RawSocket(char *ethInterfaceName) {
+CustomSocket::RawSocket::RawSocket(const char *ethInterfaceName) {
   if (this->CreateSocket(ethInterfaceName)) {
     exit(1);
   }
@@ -17,24 +20,24 @@ CustomSocket::RawSocket::~RawSocket() {
   close(this->socketFd);
 }
 
-int CustomSocket::RawSocket::Send(char *str, size_t len) {
+int CustomSocket::RawSocket::Send(void *ptr, size_t len) {
   int ret;
-  ret = send(this->socketFd, str, len, 0);
+  ret = send(this->socketFd, ptr, len, 0);
   return ret;
 }
 
-int CustomSocket::RawSocket::Recv(char *str, size_t len) {
+int CustomSocket::RawSocket::Recv(void *ptr, size_t len) {
   int ret;
-  ret = recv(this->socketFd, str, len, 0);
+  ret = recv(this->socketFd, ptr, len, 0);
   return ret;
 }
 
-int CustomSocket::RawSocket::CreateSocket(char *nome_interface_rede) {
+int CustomSocket::RawSocket::CreateSocket(const char *nome_interface_rede) {
   int ret;
   // Cria arquivo para o socket sem qualquer protocolo
   this->socketFd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
   if (this->socketFd == -1) {
-    fprintf(stderr, "Erro ao criar socket: Verifique se você é root!\n");
+    ERROR_PRINT("Erro ao criar socket: Verifique se você é root!\n")
     return 1;
   }
 

@@ -1,24 +1,55 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
-#include "RawSocket.hpp"
-#include "Logging.hpp"
+#include "../src/libs/KermitProtocol.hpp"
+#include "../src/libs/Logging.hpp"
 #include <cstdio>
 
 #include <cstring>
 
-int main(int argc, char **argv) {
-  if (argc <= 1) {
-    ERROR_PRINT("argc pequeno\n");
+using CustomProtocol::MsgType;
+using CustomProtocol::KermitPackage;
+
+const char *GetEthIntName() {
+  struct if_nameindex *ifArr, *ifIt;
+  const char *ptr;
+
+  ifArr = if_nameindex();
+  if (!ifArr) {
+    ERROR_PRINT("Could not get eth interface name arr\n");
     exit(1);
   }
 
-  char string[1024];
-  CustomSocket::RawSocket sokt(argv[1]);
-  while (1) {
-    int ret;
-    ret = sokt.Recv(string, strlen(string) + 1);
-
-    if (ret != 0) {continue;}
-    printf("%s\n", string);
+  for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
+    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
+      ptr = strdup(ifIt->if_name);
+      if_freenameindex(ifArr);
+      return ptr;
+    }
   }
+
+  if_freenameindex(ifArr);
+
+  return NULL;
+}
+
+int main() {
+  const char *ethName = GetEthIntName();
+  if (ethName == NULL) {
+    ERROR_PRINT("Could not get interface name. Exiting.\n");
+    exit(1);
+  } else {
+    DEBUG_PRINT("Interface name [%s]\n", ethName);
+  }
+  CustomProtocol::PackageHandler pkgHandler(ethName);
+
+  while(1) {
+    int ret = pkgHandler.RecvPackage();
+    DEBUG_PRINT("RecvPackage ret [%d]\n", ret);
+    if (ret == CustomProtocol::TIMEOUT_REACHED) {
+      continue;
+    }
+    const struct KermitPackage* pkg = pkgHandler.GetCurrentPkg();
+    DEBUG_PRINT("Package data received [%s]\n", pkg->data);
+  }
+  free((void*)ethName);
 }
