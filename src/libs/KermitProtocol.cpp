@@ -27,10 +27,6 @@ unsigned long timestamp() {
 CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   this->sokt = new CustomSocket::RawSocket(netIntName);
   DEBUG_PRINT("Created new Raw Socket.\n");
-  /* Setting fixed buf len to be double the size of a KermitPackage as
-   * 0xff bytes must be inserted after every 0x88/0x81 sequence */
-  this->sokt->SetFixedBufLen(2 * sizeof(KermitPackage));
-  DEBUG_PRINT("Set Raw Socket fixed buffer len to KermitPackage size.\n");
   this->currentPkgIdx = 0;
   DEBUG_PRINT("Set current package index to 0.\n");
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
@@ -39,6 +35,8 @@ CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   DEBUG_PRINT("Set message init mark.\n");
   this->lastUsedIdx = 0;
   DEBUG_PRINT("Set last used index to 0.\n");
+  memset(this->rawBytes, 0, sizeof(this->rawBytes));
+  DEBUG_PRINT("Initialized all rawBytes arr bytes to 0.\n");
 }
 
 CustomProtocol::PackageHandler::~PackageHandler() {
@@ -76,22 +74,21 @@ int CustomProtocol::PackageHandler::SendPreviousPkg() {
 int CustomProtocol::PackageHandler::RecvPackage() {
   int ret;
   unsigned long init = timestamp();
-  unsigned char savedLastIndex;
 
   do {
-    ret = this->sokt->Recv(this->currentPkg, sizeof(KermitPackage));
+    ret = this->sokt->Recv(this->rawBytes, sizeof(this->rawBytes));
+    this->Remove0xffInPkg(this->currentPkg);
     if (ret == -1) {continue;}
     if (this->IsMsgKermitPackage()) {
-      savedLastIndex = this->lastRecvIdx;
-      this->lastRecvIdx = this->currentPkg->idx;
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
       }
-      if (savedLastIndex == this->lastRecvIdx) {
+      if (this->currentPkg->idx == this->lastRecvIdx) {
         DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n")
         return REPEATED_MSG;
       }
+      this->lastRecvIdx = this->currentPkg->idx;
       return VALID_NEW_MSG;
     }
   } while (timestamp() - init < TIMEOUT_LEN);
@@ -133,25 +130,36 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
 }
 
 void CustomProtocol::PackageHandler::Append0xffToPkg(struct KermitPackage *pkg) {
-  static unsigned char aux[sizeof(KermitPackage) * 2];
   unsigned char *pkgBytes = (unsigned char *)(pkg);
-  unsigned long pkgIt;
-  unsigned long auxIt;
+  unsigned long pkgIt = 0;
+  unsigned long rawBytesIt = 0;
   unsigned long pkgSize = this->GetPkgSize(pkg);
   
-  for (pkgIt = 0, auxIt = 0; pkgIt < pkgSize; auxIt++, pkgIt++) {
-    aux[auxIt] = pkgBytes[pkgIt];
+  for (; pkgIt < pkgSize; rawBytesIt++, pkgIt++) {
+    this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
-      aux[++auxIt] = 0xff;
+      this->rawBytes[++rawBytesIt] = 0xff;
     }
   }
 
-  DEBUG_PRINT("Final aux it value [%lu]\n", auxIt);
+  DEBUG_PRINT("Final rawBytesArr it value [%lu]\n", rawBytesIt);
   DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
-void CustomProtocol::PackageHandler::Remove0xffInsertedInPkg() {
+void CustomProtocol::PackageHandler::Remove0xffInPkg(struct KermitPackage *pkg) {
+  unsigned long rawBytesIt = 0;
+  unsigned long pkgIt = 0;
+  unsigned char *pkgBytes = (unsigned char *)(pkg);
+  
+  for (; rawBytesIt < MAX_PACKAGE_SIZE; pkgIt++, rawBytesIt++) {
+    pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
+    if (pkgBytes[pkgIt] == 0x81 || pkgBytes[pkgIt] == 0x88) {
+      rawBytesIt++;
+    }
+  }
 
+  DEBUG_PRINT("Final rawBytesArr it value [%lu]\n", rawBytesIt);
+  DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
@@ -168,7 +176,8 @@ size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
 }
 
 int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
-  return this->sokt->Send(pkg, this->GetPkgSize(pkg));
+  this->Append0xffToPkg(pkg);
+  return this->sokt->Send(this->rawBytes, MAX_PACKAGE_SIZE);
 }
 
 //=================================================================//

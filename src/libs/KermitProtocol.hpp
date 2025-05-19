@@ -51,22 +51,29 @@ namespace CustomProtocol {
     unsigned char data[DATA_SIZE];
   }__attribute__((packed));
 
+  /* Setting fixed buf len to be double the size of a KermitPackage as
+   * 0xff bytes must be inserted after every 0x88/0x81 sequence */
+  const unsigned long MAX_PACKAGE_SIZE = sizeof(KermitPackage) * 2;
+
   class PackageHandler {
     private:
       CustomSocket::RawSocket *sokt;
       struct KermitPackage pkgs[2];
       struct KermitPackage *prevPkg;
       struct KermitPackage *currentPkg;
+      unsigned char rawBytes[MAX_PACKAGE_SIZE];
       unsigned char currentPkgIdx;
       unsigned char lastRecvIdx;
       unsigned char lastUsedIdx;
 
       /* Fill currentPkg.initMark with 01111110 binary sequence */
       void SetInitMarkPkg();
-      /* Append bytes that may be discard signal to network chip with 0xff */
+      /* Append bytes that may be discard signal to network chip with 0xff.
+       * It writes modified pkg in rawBytes array */
       void Append0xffToPkg(struct KermitPackage *pkg);
-      /* Remove 0xff sequence that was inserted before package was sent */
-      void Remove0xffInsertedInPkg(struct KermitPackage *pkg);
+      /* Remove 0xff sequence after every 0x81/0x88 byte sequences. Reads from
+       * rawBytes array and writes to pkg */
+      void Remove0xffInPkg(struct KermitPackage *pkg);
       /* Fill checksum field of currentPkg. Make sure to call this after all 
        * other fields were loaded */
       void ChecksumResolver();
