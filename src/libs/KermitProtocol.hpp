@@ -87,6 +87,8 @@ namespace CustomProtocol {
       /* Send current package. Make sure to initialize it with InitPackage.
        * It returns whatever RecvPackage returns after Send is called */
       int SendPackage(struct KermitPackage *pkg);
+      /* Verify checksum field of currentPkg */
+      bool VerifyChecksum();
     public:
       PackageHandler(const char *netIntName);
       ~PackageHandler();
@@ -106,8 +108,6 @@ namespace CustomProtocol {
       void SwapPkg();
       /* It returns const pointer to last received/initiated package */
       const struct KermitPackage *GetCurrentPkg();
-      /* Verify checksum field of currentPkg */
-      bool VerifyChecksum();
   };
 
   class NetworkHandler {
