@@ -2,6 +2,7 @@
 #include "Logging.hpp"
 
 #include <bits/types/struct_timeval.h>
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 extern "C" {
@@ -214,7 +215,7 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
 
 CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
-  // alguma coisa
+  this->pkgHandler = new PackageHandler(ethIntName);
   free((void*)ethIntName);
 
   this->buffer = new unsigned char[DATA_BUFFER_SIZE];
@@ -222,5 +223,37 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
 }
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
+  delete this->pkgHandler;
   delete[] this->buffer;
+}
+
+void CustomProtocol::NetworkHandler::InvertCommunication() {
+  MsgType typeMsg;
+  int ret;
+  switch(this->status) {
+    case STATUS_RECEIVER:
+      /* receiver expects a package with INVERT message. Proceeds to send
+       * ACK. If INVERT message is received again, once more sends ACK. If 
+       * receiver gets TIMEOUT_REACHED ret, it means that sender got the ACK */
+      typeMsg = this->RetrieveData(NULL, NULL);
+      assert(typeMsg == INVERT);
+      this->SendAcknowledgement(ACK);
+      do {
+        ret = this->pkgHandler->RecvPackage();
+        if (ret == REPEATED_MSG) {
+          this->SendAcknowledgement(ACK);
+        }
+      } while (ret != TIMEOUT_REACHED);
+      /* receiver becomes sender */
+      this->status = STATUS_SENDER;
+      break;
+    case STATUS_SENDER:
+      /* sender sends INVERT message and expects an ACK as response */
+      this->SendGenericData(INVERT, NULL, 0);
+      typeMsg = this->RetrieveData(NULL, NULL);
+      assert(typeMsg == ACK);
+      /* sender becomes receiver */
+      this->status = STATUS_RECEIVER;
+      break;
+  }
 }

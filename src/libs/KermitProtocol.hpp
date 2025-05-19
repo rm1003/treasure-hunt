@@ -23,6 +23,9 @@ namespace CustomProtocol {
   const int VALID_NEW_MSG = 3;
   const int INVALID_NEW_MSG = 4;
 
+  const int STATUS_RECEIVER = 1;
+  const int STATUS_SENDER = 2;
+
   enum MsgType {
     ACK = 0,          // reserved
     NACK,             // reserved
@@ -113,6 +116,7 @@ namespace CustomProtocol {
       unsigned char **splitDataArr;
       unsigned char *buffer;
       size_t bufferOffset;
+      int status;
 
       /* Return name of network interface. Make sure to free this pointer */
       const char *GetEthIntName();
@@ -126,6 +130,8 @@ namespace CustomProtocol {
     public:
       NetworkHandler();
       ~NetworkHandler();
+      /* Set status to STATUS_RECEIVER or STATUS_SENDER */
+      int setInitialStatus(int status);
       /* Write incoming data to file until END_OF_FILE message is read */
       void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
@@ -136,14 +142,15 @@ namespace CustomProtocol {
       /* Send ACK; OK_AND_ACK; TXT_FILE_NAME_ACK; VIDEO_FILE_NAME_ACK or
        * IMG_FILE_NAME_ACK. This operations does not block */
       void SendAcknowledgement(MsgType msg);
-      /* Send NACK. This operation does not block */
-      void SendNonAcknowledgement();
       /* Inform receiver to become sender. Receiver waits for TIMEOUT_LEN after
        * getting an INVERT message */
       void InvertCommunication();
-      /* Listen for incoming data until a valid KermitPackage arrives */
-      void RecvGenericData();
-      /* Return response gotten from Send/Recv operations */
+      /* Listen for incoming data until a valid KermitPackage arrives. If an
+       * invalid package arrives (checksum verification failed), send a NACK
+       * response */
+      int RecvGenericData();
+      /* Return response gotten from Send/Recv operations. If ptr is NULL,
+       * no memcpy is done */
       MsgType RetrieveData(void **ptr, size_t *len);
   };
   
