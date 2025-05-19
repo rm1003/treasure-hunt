@@ -111,18 +111,11 @@ namespace CustomProtocol {
     private:
       PackageHandler *pkgHandler;
       unsigned char **splitDataArr;
-      unsigned char *buffer;
-      size_t bufferOffset;
 
       /* Return name of network interface. Make sure to free this pointer */
       const char *GetEthIntName();
       /* Split data pointed by ptr in splitDataArr respecting DATA_SIZE */
       void SplitRawData(unsigned char *ptr, size_t len);
-      /* Append received data to buffer. If buffer does not have enough space,
-       * return 1, otherwise return 0 */
-      int AppendtoBuffer(unsigned char *ptr, size_t len);
-      /* Flush number of buffer offset bytes to file */
-      void FlushBuffer();
     public:
       NetworkHandler();
       ~NetworkHandler();
