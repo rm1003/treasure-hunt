@@ -33,7 +33,7 @@ CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   DEBUG_PRINT("Set initial current package.\n");
   this->SetInitMarkPkg();
   DEBUG_PRINT("Set message init mark.\n");
-  this->lastUsedIdx = 0;
+  this->lastUsedIdx = this->lastRecvIdx = 0;
   DEBUG_PRINT("Set last used index to 0.\n");
   memset(this->rawBytes, 0, sizeof(this->rawBytes));
   DEBUG_PRINT("Initialized all rawBytes arr bytes to 0.\n");
