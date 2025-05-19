@@ -18,27 +18,17 @@ CustomSocket::RawSocket::RawSocket(const char *ethInterfaceName) {
 
 CustomSocket::RawSocket::~RawSocket() {
   close(this->socketFd);
-  delete this->fixedBuf;
-}
-
-void CustomSocket::RawSocket::SetFixedBufLen(size_t len) {
-  this->fixedBufLen = len;
-  this->fixedBuf = new unsigned char[this->fixedBufLen];
 }
 
 int CustomSocket::RawSocket::Send(void *ptr, size_t len) {
   int ret;
-  memcpy(this->fixedBuf, ptr, len);
-  ret = send(this->socketFd, this->fixedBuf, this->fixedBufLen, 0);
+  ret = send(this->socketFd, ptr, len, 0);
   return ret;
 }
 
 int CustomSocket::RawSocket::Recv(void *ptr, size_t len) {
   int ret;
-  ret = recv(this->socketFd, this->fixedBuf, this->fixedBufLen, 0);
-  if (ret != -1) {
-    memcpy(ptr, this->fixedBuf, len);
-  }
+  ret = recv(this->socketFd, ptr, len, 0);
   return ret;
 }
 
