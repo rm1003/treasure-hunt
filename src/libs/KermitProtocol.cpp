@@ -179,7 +179,7 @@ size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
 
 int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
   this->Append0xffToPkg(pkg);
-  return this->sokt->Send(this->rawBytes, MAX_PACKAGE_SIZE);
+  return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
 }
 
 //=================================================================//
