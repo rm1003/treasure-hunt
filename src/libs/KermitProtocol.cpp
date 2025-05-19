@@ -77,9 +77,11 @@ int CustomProtocol::PackageHandler::RecvPackage() {
 
   do {
     ret = this->sokt->Recv(this->rawBytes, sizeof(this->rawBytes));
-    this->Remove0xffInPkg(this->currentPkg);
-    if (ret == -1) {continue;}
+    if (ret == -1) {
+      continue;
+    }
     if (this->IsMsgKermitPackage()) {
+      this->Remove0xffInPkg(this->currentPkg);
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
