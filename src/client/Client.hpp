@@ -10,6 +10,8 @@ namespace TreasureHunt {
     public:
       Client();
       ~Client();
+      void WaitForServer();
+
       void GetInitialPositial();
       void InformServerMoveUp();
       void InformServerMoveDown();

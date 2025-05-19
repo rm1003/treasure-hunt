@@ -27,12 +27,12 @@ namespace CustomProtocol {
     ACK = 0,          // reserved
     NACK,             // reserved
     OK_AND_ACK,       // reserved
-    A_DEFINIR_1,      
+    INVERT,      
     FILE_SIZE,      
     DATA,             // reserved
-    TXT_FILE_NAME,  
-    VIDEO_FILE_NAME,
-    IMG_FILE_NAME,
+    TXT_FILE_NAME_ACK,  
+    VIDEO_FILE_NAME_ACK,
+    IMG_FILE_NAME_ACK,
     END_OF_FILE,      // reserved
     MOVE_RIGHT,     
     MOVE_UP,
@@ -119,7 +119,7 @@ namespace CustomProtocol {
       /* Split data pointed by ptr in splitDataArr respecting DATA_SIZE */
       void SplitRawData(unsigned char *ptr, size_t len);
       /* Append received data to buffer. If buffer does not have enough space,
-       * return 1, otherwise return 0 */
+       * return 1, otherwiMsgType msgse return 0 */
       int AppendtoBuffer(unsigned char *ptr, size_t len);
       /* Flush number of buffer offset bytes to file */
       void FlushBuffer();
@@ -130,12 +130,21 @@ namespace CustomProtocol {
       void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
       void SendFile(char *filePath);
-      /* Send len bytes pointer by ptr void pointer */
+      /* Send len bytes pointer by ptr void pointer. This operation blocks
+       * until ACK is received */
       void SendGenericData(MsgType msg, void *ptr, size_t len);
-      /* Recei */
-      MsgType RecvGenericData(void **ptr, size_t *len);
-      /* Return pointer to read data. Make sure to duplicate this data */
-      const unsigned char *ReadIncomingData();
+      /* Send ACK; OK_AND_ACK; TXT_FILE_NAME_ACK; VIDEO_FILE_NAME_ACK or
+       * IMG_FILE_NAME_ACK. This operations does not block */
+      void SendAcknowledgement(MsgType msg);
+      /* Send NACK. This operation does not block */
+      void SendNonAcknowledgement();
+      /* Inform receiver to become sender. Receiver waits for TIMEOUT_LEN after
+       * getting an INVERT message */
+      void InvertCommunication();
+      /* Listen for incoming data until a valid KermitPackage arrives */
+      void RecvGenericData();
+      /* Return response gotten from Send/Recv operations */
+      MsgType RetrieveData(void **ptr, size_t *len);
   };
   
 }
