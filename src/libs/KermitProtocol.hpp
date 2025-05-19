@@ -2,6 +2,7 @@
 #define KERMITPROTOCOL_HPP_
 
 #include "RawSocket.hpp"
+#include "Buffer.hpp"
 #include <cstddef>
 
 #define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
@@ -111,6 +112,7 @@ namespace CustomProtocol {
     private:
       PackageHandler *pkgHandler;
       unsigned char **splitDataArr;
+      Data::Buffer buffer;
 
       /* Return name of network interface. Make sure to free this pointer */
       const char *GetEthIntName();
