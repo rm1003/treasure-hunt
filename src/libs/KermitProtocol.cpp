@@ -113,20 +113,20 @@ void CustomProtocol::PackageHandler::SetInitMarkPkg() {
 }
 
 unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
-  unsigned long sum = 0;
-  size_t offset = 0;
-  sum += this->currentPkg->size;
-  sum += (sum >> sizeof(KermitPackage::checkSum));
+  unsigned long sum;
+  size_t it = 0;
+  const size_t checksumTotalBits = sizeof(KermitPackage::checkSum) * 8;
+
+  sum = this->currentPkg->size;
   sum += this->currentPkg->idx;
-  sum += (sum >> sizeof(KermitPackage::checkSum));
+  sum += (sum >> checksumTotalBits);
   sum += this->currentPkg->type;
-  sum += (sum >> sizeof(KermitPackage::checkSum));
-  while(offset < this->currentPkg->size) {
-    /* Gets type of KermitPackage::checkSum and casts this->currentPkg->data +
-     * offset to a pointer to this type and then dereferences it */
-    sum += *(decltype(KermitPackage::checkSum)*)(this->currentPkg->data + offset);
-    sum += (sum >> sizeof(KermitPackage::checkSum));
-    offset += sizeof(KermitPackage::checkSum);
+  sum += (sum >> checksumTotalBits);
+  /* This loop only works since checkSum field has 1 byte in size */
+  while(it < this->currentPkg->size) {
+    sum += this->currentPkg->data[it];
+    sum += (sum >> checksumTotalBits);
+    it++;
   }
   
   return (unsigned char)~sum;
