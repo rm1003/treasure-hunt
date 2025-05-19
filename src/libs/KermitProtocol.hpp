@@ -70,10 +70,10 @@ namespace CustomProtocol {
       void SetInitMarkPkg();
       /* Append bytes that may be discard signal to network chip with 0xff.
        * It writes modified pkg in rawBytes array */
-      void Append0xffToPkg(struct KermitPackage *pkg);
-      /* Remove 0xff sequence after every 0x81/0x88 byte sequences. Reads from
+      void Append0xff(struct KermitPackage *pkg);
+      /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
        * rawBytes array and writes to pkg */
-      void Remove0xffInPkg(struct KermitPackage *pkg);
+      void Remove0xff(struct KermitPackage *pkg);
       /* Fill checksum field of currentPkg. Make sure to call this after all 
        * other fields were loaded */
       void ChecksumResolver();

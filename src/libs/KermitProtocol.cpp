@@ -80,8 +80,8 @@ int CustomProtocol::PackageHandler::RecvPackage() {
     if (ret == -1) {
       continue;
     }
+    this->Remove0xff(this->currentPkg);
     if (this->IsMsgKermitPackage()) {
-      this->Remove0xffInPkg(this->currentPkg);
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
@@ -131,7 +131,7 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
   this->currentPkg->checkSum = (unsigned char)sum;
 }
 
-void CustomProtocol::PackageHandler::Append0xffToPkg(struct KermitPackage *pkg) {
+void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned char *pkgBytes = (unsigned char *)(pkg);
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
@@ -148,7 +148,7 @@ void CustomProtocol::PackageHandler::Append0xffToPkg(struct KermitPackage *pkg) 
   DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
-void CustomProtocol::PackageHandler::Remove0xffInPkg(struct KermitPackage *pkg) {
+void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
   unsigned char *pkgBytes = (unsigned char *)(pkg);
@@ -178,7 +178,7 @@ size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
 }
 
 int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
-  this->Append0xffToPkg(pkg);
+  this->Append0xff(pkg);
   return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
 }
 

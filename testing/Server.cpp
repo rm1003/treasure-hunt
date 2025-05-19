@@ -43,7 +43,7 @@ int main() {
   CustomProtocol::PackageHandler pkgHandler(ethName);
   char string[] = "Oi meu nome é fernando, essa eh uma mensagem!";
   while(1) {
-    pkgHandler.InitPackage(MsgType::DATA, string, strlen(string) + 1);
+    pkgHandler.InitPackage(MsgType::DATA, string, sizeof(string));
     int ret = pkgHandler.SendCurrentPkg();
     sleep(1);
     DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
