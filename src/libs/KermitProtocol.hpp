@@ -74,9 +74,9 @@ namespace CustomProtocol {
       /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
        * rawBytes array and writes to pkg */
       void Remove0xff(struct KermitPackage *pkg);
-      /* Fill checksum field of currentPkg. Make sure to call this after all 
-       * other fields were loaded */
-      void ChecksumResolver();
+      /* Return checksum. Make sure to call this after all other fields were 
+       * loaded */
+      unsigned char ChecksumResolver();
       /* size of KermitPackage - DATA_SIZE + currentPkg.size */
       size_t GetPkgSize(struct KermitPackage *pkg);
       /* Verify if bytes pointed by currentPkg represent a KermitPackage */

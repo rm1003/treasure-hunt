@@ -56,7 +56,7 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   if (data != NULL) {
     memcpy(this->currentPkg->data, data, len);
   }
-  this->ChecksumResolver();
+  this->currentPkg->checkSum = this->ChecksumResolver();
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
   DEBUG_PRINT("Updated last used index [%d].\n", this->lastUsedIdx);
 
@@ -112,7 +112,7 @@ void CustomProtocol::PackageHandler::SetInitMarkPkg() {
   this->currentPkg->initMark = INIT_MARK;
 }
 
-void CustomProtocol::PackageHandler::ChecksumResolver() {
+unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
   unsigned long sum = 0;
   size_t offset = 0;
   sum += this->currentPkg->size;
@@ -128,7 +128,8 @@ void CustomProtocol::PackageHandler::ChecksumResolver() {
     sum += (sum >> sizeof(KermitPackage::checkSum));
     offset += sizeof(KermitPackage::checkSum);
   }
-  this->currentPkg->checkSum = (unsigned char)sum;
+  
+  return (unsigned char)~sum;
 }
 
 void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
@@ -165,7 +166,8 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
 }
 
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
-  return true;
+  unsigned char sum = this->currentPkg->checkSum + ~this->ChecksumResolver();
+  return (sum == 0xff);
 }
 
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
