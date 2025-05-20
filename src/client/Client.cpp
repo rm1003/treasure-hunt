@@ -37,7 +37,7 @@ void TreasureHunt::Client::PrintGrid() {
 }
 
 void TreasureHunt::Client::PrintEmptySpace() {
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < NUMBER_OF_NEW_LINES; i++) {
     printf("\n");
   }
 

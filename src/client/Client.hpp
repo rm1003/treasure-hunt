@@ -7,6 +7,7 @@ const int TREASURE_FOUND = 1;
 const int TREASURE_NOT_FOUND = 2;
 const int INVALID_MOVE = 3;
 const char SPACE[] = "   ";
+const int NUMBER_OF_NEW_LINES = 80;
 
 class Client {
   private:
