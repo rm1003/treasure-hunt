@@ -44,8 +44,8 @@ CustomProtocol::PackageHandler::~PackageHandler() {
   delete this->sokt;
 }
 
-int CustomProtocol::PackageHandler::InitPackage(unsigned char type, 
-                                                void *data, 
+int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
+                                                void *data,
                                                 size_t len) {
   if (len > DATA_SIZE) {
     ERROR_PRINT("Data is too long to fit a package. Exiting.\n");
@@ -129,7 +129,7 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     sum += (sum >> checksumTotalBits);
     it++;
   }
-  
+
   return (unsigned char)~sum;
 }
 
@@ -138,7 +138,7 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
   unsigned long pkgSize = this->GetPkgSize(pkg);
-  
+
   for (; pkgIt < pkgSize; rawBytesIt++, pkgIt++) {
     this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
@@ -154,7 +154,7 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
   unsigned char *pkgBytes = (unsigned char *)(pkg);
-  
+
   for (; rawBytesIt < MAX_PACKAGE_SIZE; pkgIt++, rawBytesIt++) {
     pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x81 || pkgBytes[pkgIt] == 0x88) {
@@ -225,35 +225,4 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
 CustomProtocol::NetworkHandler::~NetworkHandler() {
   delete this->pkgHandler;
   delete[] this->buffer;
-}
-
-void CustomProtocol::NetworkHandler::InvertCommunication() {
-  MsgType typeMsg;
-  int ret;
-  switch(this->status) {
-    case STATUS_RECEIVER:
-      /* receiver expects a package with INVERT message. Proceeds to send
-       * ACK. If INVERT message is received again, once more sends ACK. If 
-       * receiver gets TIMEOUT_REACHED ret, it means that sender got the ACK */
-      typeMsg = this->RetrieveData(NULL, NULL);
-      assert(typeMsg == INVERT);
-      this->SendAcknowledgement(ACK);
-      do {
-        ret = this->pkgHandler->RecvPackage();
-        if (ret == REPEATED_MSG) {
-          this->SendAcknowledgement(ACK);
-        }
-      } while (ret != TIMEOUT_REACHED);
-      /* receiver becomes sender */
-      this->status = STATUS_SENDER;
-      break;
-    case STATUS_SENDER:
-      /* sender sends INVERT message and expects an ACK as response */
-      this->SendGenericData(INVERT, NULL, 0);
-      typeMsg = this->RetrieveData(NULL, NULL);
-      assert(typeMsg == ACK);
-      /* sender becomes receiver */
-      this->status = STATUS_RECEIVER;
-      break;
-  }
 }

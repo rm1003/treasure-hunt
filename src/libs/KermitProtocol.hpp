@@ -9,12 +9,12 @@
 #define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
-  
+
   const unsigned long DATA_SIZE = 128;
   const unsigned char INIT_MARK = 0x7e;
   const unsigned long DATA_BUFFER_SIZE = 1 << 20;
   const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
-  
+
   // Given in miliseconds
   const unsigned long TIMEOUT_LEN = 100;
 
@@ -23,26 +23,23 @@ namespace CustomProtocol {
   const int VALID_NEW_MSG = 3;
   const int INVALID_NEW_MSG = 4;
 
-  const int STATUS_RECEIVER = 1;
-  const int STATUS_SENDER = 2;
-
   enum MsgType {
-    ACK = 0,          // reserved
-    NACK,             // reserved
-    OK_AND_ACK,       // reserved
-    INVERT,      
-    FILE_SIZE,      
-    DATA,             // reserved
-    TXT_FILE_NAME_ACK,  
+    ACK = 0,
+    NACK,
+    OK_AND_ACK,
+    A_DEFINIR_1,
+    FILE_SIZE,
+    DATA,
+    TXT_FILE_NAME_ACK,
     VIDEO_FILE_NAME_ACK,
     IMG_FILE_NAME_ACK,
-    END_OF_FILE,      // reserved
-    MOVE_RIGHT,     
+    END_OF_FILE,
+    MOVE_RIGHT,
     MOVE_UP,
     MOVE_DOWN,
     MOVE_LEFT,
     A_DEFINIR_2,
-    ERROR             // reserved
+    ERROR
   };
 
   struct KermitPackage {
@@ -77,7 +74,7 @@ namespace CustomProtocol {
       /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
        * rawBytes array and writes to pkg */
       void Remove0xff(struct KermitPackage *pkg);
-      /* Return checksum. Make sure to call this after all other fields were 
+      /* Return checksum. Make sure to call this after all other fields were
        * loaded */
       unsigned char ChecksumResolver();
       /* size of KermitPackage - DATA_SIZE + currentPkg.size */
@@ -90,7 +87,7 @@ namespace CustomProtocol {
     public:
       PackageHandler(const char *netIntName);
       ~PackageHandler();
-      /* Initialize current package with type (message type), data (pointer 
+      /* Initialize current package with type (message type), data (pointer
        * to data) and number of data bytes (<= 128). If there is no data to be
        * sent fill data with NULL and len with 0 */
       int InitPackage(unsigned char type, void *data, size_t len);
@@ -116,7 +113,6 @@ namespace CustomProtocol {
       unsigned char **splitDataArr;
       unsigned char *buffer;
       size_t bufferOffset;
-      int status;
 
       /* Return name of network interface. Make sure to free this pointer */
       const char *GetEthIntName();
@@ -130,8 +126,6 @@ namespace CustomProtocol {
     public:
       NetworkHandler();
       ~NetworkHandler();
-      /* Set status to STATUS_RECEIVER or STATUS_SENDER */
-      int SetInitialStatus(int status);
       /* Write incoming data to file until END_OF_FILE message is read */
       void RecvFile(char *filePath);
       /* Send data in file and END_OF_FILE message when done */
@@ -142,9 +136,6 @@ namespace CustomProtocol {
       /* Send ACK; OK_AND_ACK; TXT_FILE_NAME_ACK; VIDEO_FILE_NAME_ACK or
        * IMG_FILE_NAME_ACK. This operations does not block */
       void SendAcknowledgement(MsgType msg);
-      /* Inform receiver to become sender. Receiver waits for TIMEOUT_LEN after
-       * getting an INVERT message */
-      void InvertCommunication();
       /* Listen for incoming data until a valid KermitPackage arrives. If an
        * invalid package arrives (checksum verification failed), send a NACK
        * response */
@@ -153,7 +144,7 @@ namespace CustomProtocol {
        * no memcpy is done */
       MsgType RetrieveData(void **ptr, size_t *len);
   };
-  
+
 }
 
 #endif
