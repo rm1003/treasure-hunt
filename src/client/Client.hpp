@@ -3,23 +3,29 @@
 
 namespace TreasureHunt {
 
-  class Client {
-    private:
-      CustomProtocol::NetworkHandler netHandler;
-      Position currentPosition;
-    public:
-      Client();
-      ~Client();
-      void WaitForServer();
+const int TREASURE_FOUND = 1;
+const int TREASURE_NOT_FOUND = 2;
+const int INVALID_MOVE = 3;
+const char SPACE[] = "   ";
 
-      void GetInitialPositial();
-      void InformServerMoveUp();
-      void InformServerMoveDown();
-      void InformServerMoveLeft();
-      void InformServerMoveRight();
-      void WaitForServerResponse();
-      void InterpretServerResponse();
-      void GetServerTreasure();
-  };
+class Client {
+  private:
+    // CustomProtocol::NetworkHandler netHandler;
+    Position currentPosition;
+    char *treasureFileName;
+    int numberOfFoundTreasures;
+    bool HasTreasure[GRID_SIZE][GRID_SIZE];
+    bool WasReached[GRID_SIZE][GRID_SIZE];
+  public:
+    Client();
+    ~Client() {};
+    void PrintGrid();
+    void PrintEmptySpace();
+    int InformServerMoveUp();
+    int InformServerMoveDown();
+    int InformServerMoveLeft();
+    int InformServerMoveRight();
+    void GetServerTreasure();
+};
 
 }

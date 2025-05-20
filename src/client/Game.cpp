@@ -5,5 +5,5 @@
 int main() {
   TreasureHunt::Client client;
 
-  client.WaitForServer();
+  client.PrintGrid();
 }
