@@ -40,6 +40,25 @@ void TreasureHunt::Client::PrintEmptySpace() {
   for (int i = 0; i < NUMBER_OF_NEW_LINES; i++) {
     printf("\n");
   }
-
   fflush(stdout);
+}
+
+int TreasureHunt::Client::InformServerMoveUp() {
+  return TREASURE_NOT_FOUND;
+}
+
+int TreasureHunt::Client::InformServerMoveDown() {
+  return TREASURE_NOT_FOUND;
+}
+
+int TreasureHunt::Client::InformServerMoveLeft() {
+  return TREASURE_NOT_FOUND;
+}
+
+int TreasureHunt::Client::InformServerMoveRight() {
+  return TREASURE_NOT_FOUND;
+}
+
+void TreasureHunt::Client::GetServerTreasure() {
+
 }
