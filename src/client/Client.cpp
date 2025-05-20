@@ -3,9 +3,10 @@
 #include <cstring>
 
 TreasureHunt::Client::Client() {
-  this->currentPosition.SetPosition(0, 0);
+  this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
   memset(this->WasReached, 0, sizeof(this->WasReached));
+  this->WasReached[INI_X][INI_Y] = true;
 }
 
 void TreasureHunt::Client::PrintGrid() {
@@ -43,19 +44,7 @@ void TreasureHunt::Client::PrintEmptySpace() {
   fflush(stdout);
 }
 
-int TreasureHunt::Client::InformServerMoveUp() {
-  return TREASURE_NOT_FOUND;
-}
-
-int TreasureHunt::Client::InformServerMoveDown() {
-  return TREASURE_NOT_FOUND;
-}
-
-int TreasureHunt::Client::InformServerMoveLeft() {
-  return TREASURE_NOT_FOUND;
-}
-
-int TreasureHunt::Client::InformServerMoveRight() {
+int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   return TREASURE_NOT_FOUND;
 }
 

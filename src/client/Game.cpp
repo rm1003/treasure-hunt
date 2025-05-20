@@ -26,7 +26,24 @@ int main() {
     do {
       key = getchar();
     } while (IsNotMovementKey(key));
-    printf("%c\n", key);
+
+    switch(key) {
+      case 'a':
+        client.currentPosition.MoveLeft();
+        break;
+      case 'w':
+        client.currentPosition.MoveUp();
+        break;
+      case 's':
+        client.currentPosition.MoveDown();
+        break;
+      case 'd':
+        client.currentPosition.MoveRight();
+        break;
+    }
+
+    client.PrintEmptySpace();
+    client.PrintGrid();
   }
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);

@@ -17,6 +17,18 @@ namespace TreasureHunt {
     inline bool Equal(int x, int y) {
       return (this->x == x && this->y == y);
     }
+    inline void MoveUp() {
+      this->x++;
+    }
+    inline void MoveDown() {
+      this->x--;
+    }
+    inline void MoveRight() {
+      this->y++;
+    }
+    inline void MoveLeft() {
+      this->y--;
+    }
   };
 
 }
