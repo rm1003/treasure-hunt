@@ -9,12 +9,12 @@
 #define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
-  
+
   const unsigned long DATA_SIZE = 128;
   const unsigned char INIT_MARK = 0x7e;
   const unsigned long DATA_BUFFER_SIZE = 1 << 20;
   const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
-  
+
   // Given in miliseconds
   const unsigned long TIMEOUT_LEN = 100;
 
@@ -30,14 +30,14 @@ namespace CustomProtocol {
     ACK = 0,          // reserved
     NACK,             // reserved
     OK_AND_ACK,       // reserved
-    INVERT,      
-    FILE_SIZE,      
+    INVERT,
+    FILE_SIZE,
     DATA,             // reserved
-    TXT_FILE_NAME_ACK,  
+    TXT_FILE_NAME_ACK,
     VIDEO_FILE_NAME_ACK,
     IMG_FILE_NAME_ACK,
     END_OF_FILE,      // reserved
-    MOVE_RIGHT,     
+    MOVE_RIGHT,
     MOVE_UP,
     MOVE_DOWN,
     MOVE_LEFT,
@@ -77,7 +77,7 @@ namespace CustomProtocol {
       /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
        * rawBytes array and writes to pkg */
       void Remove0xff(struct KermitPackage *pkg);
-      /* Return checksum. Make sure to call this after all other fields were 
+      /* Return checksum. Make sure to call this after all other fields were
        * loaded */
       unsigned char ChecksumResolver();
       /* size of KermitPackage - DATA_SIZE + currentPkg.size */
@@ -92,7 +92,7 @@ namespace CustomProtocol {
     public:
       PackageHandler(const char *netIntName);
       ~PackageHandler();
-      /* Initialize current package with type (message type), data (pointer 
+      /* Initialize current package with type (message type), data (pointer
        * to data) and number of data bytes (<= 128). If there is no data to be
        * sent fill data with NULL and len with 0 */
       int InitPackage(unsigned char type, void *data, size_t len);
@@ -153,7 +153,7 @@ namespace CustomProtocol {
        * no memcpy is done */
       MsgType RetrieveData(void **ptr, size_t *len);
   };
-  
+
 }
 
 #endif

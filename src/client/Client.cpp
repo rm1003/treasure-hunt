@@ -1,12 +1,13 @@
 #include "Client.hpp"
+#include "../libs/Logging.hpp"
 #include <cstdio>
 #include <cstring>
 
 TreasureHunt::Client::Client() {
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
-  memset(this->WasReached, 0, sizeof(this->WasReached));
-  this->WasReached[INI_X][INI_Y] = true;
+  memset(this->wasReached, 0, sizeof(this->wasReached));
+  this->wasReached[INI_X][INI_Y] = true;
 }
 
 void TreasureHunt::Client::PrintGrid() {
@@ -18,8 +19,8 @@ void TreasureHunt::Client::PrintGrid() {
         continue;
       }
 
-      if (this->WasReached[i][j]) {
-        if (this->HasTreasure[i][j]) {
+      if (this->wasReached[i][j]) {
+        if (this->hasTreasure[i][j]) {
           printf("3");
           printf(SPACE);
         } else {
@@ -45,9 +46,34 @@ void TreasureHunt::Client::PrintEmptySpace() {
 }
 
 int TreasureHunt::Client::InformServerMovement(MsgType mov) {
-  return TREASURE_NOT_FOUND;
+  MsgType ret;
+  netHandler.SendGenericData(mov, NULL, 0);
+  ret = netHandler.RetrieveData(NULL, 0);
+  switch (ret) {
+    case CustomProtocol::OK_AND_ACK:
+      return VALID_MOVE;
+    case CustomProtocol::ACK:
+      return INVALID_MOVE;
+    case CustomProtocol::TXT_FILE_NAME_ACK:
+      netHandler.RetrieveData((void**)&this->treasureFileName, NULL);
+      return TREASURE_FOUND;
+    case CustomProtocol::IMG_FILE_NAME_ACK:
+      netHandler.RetrieveData((void**)&this->treasureFileName, NULL);
+      return TREASURE_FOUND;
+    case CustomProtocol::VIDEO_FILE_NAME_ACK:
+      netHandler.RetrieveData((void**)&this->treasureFileName, NULL);
+      return TREASURE_FOUND;
+    default:
+      ERROR_PRINT("Not expected return type. Exiting.\n");
+      exit(1);
+  }
 }
 
 void TreasureHunt::Client::GetServerTreasure() {
+  MsgType ret;
+  this->netHandler.RecvGenericData();
+  this->netHandler.RetrieveData((void**)&this->fileSize, NULL);
+  this->netHandler.RecvFile(this->treasureFileName);
 
+  delete this->treasureFileName;
 }

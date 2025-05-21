@@ -1,26 +1,27 @@
 #include "../TreasureHunt.hpp"
 #include "../libs/KermitProtocol.hpp"
+#include <cstddef>
 
 using CustomProtocol::MsgType;
 
 namespace TreasureHunt {
 
 const int TREASURE_FOUND = 1;
-const int TREASURE_NOT_FOUND = 2;
+const int VALID_MOVE = 2;
 const int INVALID_MOVE = 3;
 const char SPACE[] = "   ";
 const int NUMBER_OF_NEW_LINES = 80;
-const int INI_X = 0;
-const int INI_Y = 0;
 
 class Client {
   private:
-    // CustomProtocol::NetworkHandler netHandler;
+    CustomProtocol::NetworkHandler netHandler;
     char *treasureFileName;
+    size_t *fileSize;
     int numberOfFoundTreasures;
-    bool HasTreasure[GRID_SIZE][GRID_SIZE];
-    bool WasReached[GRID_SIZE][GRID_SIZE];
-    public:
+    bool hasTreasure[GRID_SIZE][GRID_SIZE];
+    bool wasReached[GRID_SIZE][GRID_SIZE];
+
+  public:
     Position currentPosition;
     Client();
     ~Client() {};
