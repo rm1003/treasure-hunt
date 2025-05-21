@@ -3,6 +3,12 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <fcntl.h>
+#include <unistd.h>
+#include <iostream>
+#include <cstring>
+
+#include "Logging.hpp"
 
 namespace Data {
 
@@ -22,6 +28,14 @@ class Buffer {
   public:
     Buffer();
     ~Buffer();
+    /* Open the file for read-only */
+    void OpenFileForRead(char *filePath);
+    /* Create the file for write */
+    void OpenFileForWrite(char *filePath);
+    /* Close the file */
+    void CloseFile(char *filePath);
+    /* Get the read size */
+    size_t GetLastReadSize();
     /* Returns store + offset and increments offset by len. If offset becomes 
      * than buffer size, it returns remaining size of buffer in remainingSize */
     void *GetData(size_t len, size_t *remainingSize);
