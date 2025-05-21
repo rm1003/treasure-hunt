@@ -71,8 +71,9 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
 
 void TreasureHunt::Client::GetServerTreasure() {
   MsgType ret;
-  this->netHandler.RecvGenericData();
+  this->netHandler.RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
   this->netHandler.RetrieveData((void**)&this->fileSize, NULL);
+  this->netHandler.SendAcknowledgement(CustomProtocol::ACK);
   this->netHandler.RecvFile(this->treasureFileName);
 
   delete this->treasureFileName;
