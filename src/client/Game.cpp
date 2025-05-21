@@ -2,6 +2,8 @@
 
 #include "Client.hpp"
 
-int main(int argc, char **argv) {
+int main() {
+  TreasureHunt::Client client;
 
+  client.WaitForServer();
 }
