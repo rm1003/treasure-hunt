@@ -221,5 +221,4 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
   delete this->pkgHandler;
-  delete[] this->buffer;
 }

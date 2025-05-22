@@ -20,10 +20,8 @@ class Buffer {
     /* File Descriptor */
     int fd;
     unsigned char *store;
-    /* Initialized with 0. Becomes 0 after every Retrieve/Flush operation */
-    size_t offset;
-    bool eofFound;
-    size_t eofLocation;
+    size_t offset;          // Actual position in the buffer
+    size_t activeSize;      // Valid size in the buffer
     
   public:
     Buffer();
@@ -35,8 +33,8 @@ class Buffer {
     /* Close the file */
     void CloseFile(char *filePath);
     /* Returns store + offset and increments offset by len. If offset becomes 
-     * than buffer size, it returns remaining size of buffer in remainingSize */
-    void *GetData(size_t len, size_t *remainingSize);
+     * than buffer size, it returns actual size of buffer in actualSize */
+    void *GetData(size_t len, size_t *actualSize);
     /* Retrive new buffer from file. If number of bytes read is not equal to
      * BUFFER_SIZE, eofFound becomes true and number of read bytes is assigned to
      * eofLocation. If eofFound is true and this operation is called, retuns 1 */

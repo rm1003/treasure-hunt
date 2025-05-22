@@ -114,7 +114,6 @@ class PackageHandler {
 class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
-    Data::Buffer buffer;
 
     /* Return name of network interface. Make sure to free this pointer */
     const char *GetEthIntName();
