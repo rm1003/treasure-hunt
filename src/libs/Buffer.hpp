@@ -34,8 +34,6 @@ class Buffer {
     void OpenFileForWrite(char *filePath);
     /* Close the file */
     void CloseFile(char *filePath);
-    /* Get the read size */
-    size_t GetLastReadSize();
     /* Returns store + offset and increments offset by len. If offset becomes 
      * than buffer size, it returns remaining size of buffer in remainingSize */
     void *GetData(size_t len, size_t *remainingSize);
