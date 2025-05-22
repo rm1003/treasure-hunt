@@ -91,7 +91,7 @@ int Data::Buffer::RetrieveBuffer() {
 
 int Data::Buffer::AppendToBuffer(void *ptr, size_t len) {
   if (ptr == NULL) {
-    ERROR_PRINT("Poiter is NULL.\n Exiting...\n");
+    ERROR_PRINT("Pointer is NULL.\n Exiting...\n");
     exit(1);
   }
 
