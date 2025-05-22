@@ -15,7 +15,7 @@ void Data::Buffer::OpenFileForRead(char *filePath) {
   this->fd = open(filePath, O_RDONLY);
   if (this->fd == -1) {
     ERROR_PRINT("Failed to open file.\n Exiting...\n");
-    exit(0);
+    exit(1);
   }
   return;
 }
@@ -31,9 +31,8 @@ void Data::Buffer::OpenFileForWrite(char *filePath) {
 void Data::Buffer::CloseFile(char *filePath) {
   if (this->fd == 1) {
     ERROR_PRINT("Failed to close file.\n Exiting...\n");
-    exit(0);
+    exit(1);
   }
-  FlushBuffer();
   close(this->fd);
   return;
 }
