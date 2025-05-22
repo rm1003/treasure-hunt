@@ -2,6 +2,7 @@
 #include "Logging.hpp"
 
 #include <bits/types/struct_timeval.h>
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 extern "C" {
@@ -43,8 +44,8 @@ CustomProtocol::PackageHandler::~PackageHandler() {
   delete this->sokt;
 }
 
-int CustomProtocol::PackageHandler::InitPackage(unsigned char type, 
-                                                void *data, 
+int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
+                                                void *data,
                                                 size_t len) {
   if (len > DATA_SIZE) {
     ERROR_PRINT("Data is too long to fit a package. Exiting.\n");
@@ -128,7 +129,7 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     sum += (sum >> checksumTotalBits);
     it++;
   }
-  
+
   return (unsigned char)~sum;
 }
 
@@ -137,7 +138,7 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
   unsigned long pkgSize = this->GetPkgSize(pkg);
-  
+
   for (; pkgIt < pkgSize; rawBytesIt++, pkgIt++) {
     this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
@@ -153,7 +154,7 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
   unsigned char *pkgBytes = (unsigned char *)(pkg);
-  
+
   for (; rawBytesIt < MAX_PACKAGE_SIZE; pkgIt++, rawBytesIt++) {
     pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x81 || pkgBytes[pkgIt] == 0x88) {
@@ -214,9 +215,11 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
 
 CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
-  // alguma coisa
+  this->pkgHandler = new PackageHandler(ethIntName);
   free((void*)ethIntName);
 }
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
+  delete this->pkgHandler;
+  delete[] this->buffer;
 }
