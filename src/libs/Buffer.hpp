@@ -32,12 +32,13 @@ class Buffer {
     void OpenFileForWrite(char *filePath);
     /* Close the file */
     void CloseFile(char *filePath);
-    /* Returns store + offset and increments offset by len. If offset becomes 
-     * than buffer size, it returns actual size of buffer in actualSize */
+    /* Gets the amount of data according to len and informs with actualSize the 
+     * actual amount read, returning a pointer to the buffer + offset or NULL
+     * if no more data in the buffer */
     void *GetData(size_t len, size_t *actualSize);
-    /* Retrive new buffer from file. If number of bytes read is not equal to
-     * BUFFER_SIZE, eofFound becomes true and number of read bytes is assigned to
-     * eofLocation. If eofFound is true and this operation is called, retuns 1 */
+    /* Retrive new buffer from file. activeSize stores the amount of data
+     * read. If number of bytes read is equal to 0 return 1, indicating 
+     * that there are no more bytes in the file */
     int RetrieveBuffer();
     /* If possible, appends len bytes pointer by ptr to buffer, otherwise returns 1 */
     int AppendToBuffer(void *ptr, size_t len);
