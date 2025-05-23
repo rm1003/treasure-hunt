@@ -2,6 +2,7 @@
 #define KERMITPROTOCOL_HPP_
 
 #include "RawSocket.hpp"
+#include "Buffer.hpp"
 #include <cstddef>
 
 #define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
@@ -9,7 +10,7 @@
 #define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
-
+  
 const unsigned long DATA_SIZE = 128;
 const unsigned char INIT_MARK = 0x7e;
 const unsigned long DATA_BUFFER_SIZE = 1 << 20;
@@ -113,19 +114,9 @@ class PackageHandler {
 class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
-    unsigned char **splitDataArr;
-    unsigned char *buffer;
-    size_t bufferOffset;
 
     /* Return name of network interface. Make sure to free this pointer */
     const char *GetEthIntName();
-    /* Split data pointed by ptr in splitDataArr respecting DATA_SIZE */
-    void SplitRawData(unsigned char *ptr, size_t len);
-    /* Append received data to buffer. If buffer does not have enough space,
-     * return 1, otherwiMsgType msgse return 0 */
-    int AppendtoBuffer(unsigned char *ptr, size_t len);
-    /* Flush number of buffer offset bytes to file */
-    void FlushBuffer();
   public:
     NetworkHandler();
     ~NetworkHandler();

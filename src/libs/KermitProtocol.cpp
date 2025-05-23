@@ -217,12 +217,8 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
   this->pkgHandler = new PackageHandler(ethIntName);
   free((void*)ethIntName);
-
-  this->buffer = new unsigned char[DATA_BUFFER_SIZE];
-  this->bufferOffset = 0;
 }
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
   delete this->pkgHandler;
-  delete[] this->buffer;
 }
