@@ -8,6 +8,7 @@ TreasureHunt::Client::Client() {
   this->numberOfFoundTreasures = 0;
   memset(this->wasReached, 0, sizeof(this->wasReached));
   this->wasReached[INI_X][INI_Y] = true;
+  this->hasTreasure[INI_X][INI_Y] = false;
 }
 
 void TreasureHunt::Client::PrintGrid() {
