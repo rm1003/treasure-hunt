@@ -1,6 +1,6 @@
 #include "../TreasureHunt.hpp"
 #include "../libs/KermitProtocol.hpp"
-#include <cstddef>
+#include "../libs/Buffer.hpp"
 
 using CustomProtocol::MsgType;
 
@@ -15,8 +15,9 @@ const int NUMBER_OF_NEW_LINES = 80;
 class Client {
   private:
     CustomProtocol::NetworkHandler netHandler;
+    Data::Buffer buffer;
     char *treasureFileName;
-    size_t *fileSize;
+    FileType treasureType;
     int numberOfFoundTreasures;
     bool hasTreasure[GRID_SIZE][GRID_SIZE];
     bool wasReached[GRID_SIZE][GRID_SIZE];
@@ -28,7 +29,8 @@ class Client {
     void PrintGrid();
     void PrintEmptySpace();
     int InformServerMovement(MsgType mov);
-    void GetServerTreasure();
+    /* Return 0 on success. Return 1 if failed */
+    int GetServerTreasure();
 };
 
-}
+} // namespace TreasureHunt

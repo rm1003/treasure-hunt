@@ -21,6 +21,10 @@ unsigned long timestamp() {
   return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 }
 
+void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
+  ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
+}
+
 //=================================================================//
 // CustomProtocol::PackageHandler
 //=================================================================//
@@ -65,7 +69,9 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
 }
 
 int CustomProtocol::PackageHandler::SendCurrentPkg() {
-  return this->SendPackage(this->currentPkg);
+  int ret;
+  ret = this->SendPackage(this->currentPkg);
+  this->SwapPkg();
 }
 
 int CustomProtocol::PackageHandler::SendPreviousPkg() {
@@ -221,4 +227,15 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
   delete this->pkgHandler;
+}
+
+void CustomProtocol::NetworkHandler::InvertToReceiver() {
+  MsgType ret;
+  this->RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
+  ret = this->RetrieveData(NULL, 0);
+  if (ret != CustomProtocol::INVERT_REMINDER) {
+    PrintErrorMsgType(ret, "InvertToReceiver");
+    exit(1);
+  }
+  this->SendGenericData(CustomProtocol::INVERT, NULL, 0);
 }

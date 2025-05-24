@@ -7,10 +7,13 @@ const int TOTAL_TREASURES = 8;
 const int GRID_SIZE = 8;
 const int INI_X = 0;
 const int INI_Y = 0;
-const char TREASURES_DIR[] = "../objects";
-const int MAX_PREFIX_SIZE = 64;
-const int MAX_SUFFIX_SIZE = 3;
-const int MAX_SIZE_FILE_NAME = MAX_PREFIX_SIZE + MAX_SUFFIX_SIZE + sizeof('\0');
+const char TREASURES_DIR[] = "./objects";
+
+enum FileType {
+  TXT = 1,
+  MP4,
+  JPG
+};
 
 struct Position {
   int x;
