@@ -1,6 +1,7 @@
 #include "../TreasureHunt.hpp"
 #include "../libs/KermitProtocol.hpp"
 #include "../libs/Buffer.hpp"
+#include <string>
 
 using CustomProtocol::MsgType;
 
@@ -11,6 +12,10 @@ const int VALID_MOVE = 2;
 const int INVALID_MOVE = 3;
 const char SPACE[] = "   ";
 const int NUMBER_OF_NEW_LINES = 80;
+const std::string MP4_PLAYER  = "vlc";
+const std::string MP4_OPTIONS = "--play-and-exit";
+const std::string JPG_PLAYER  = "eog";
+const std::string TXT_PLAYER  = "xed";
 
 class Client {
   private:
@@ -32,7 +37,7 @@ class Client {
     /* Return 0 on success. Return 1 if failed */
     int GetServerTreasure();
     /* */
-    void ShowTreasure();
+    int ShowTreasure();
 };
 
 } // namespace TreasureHunt

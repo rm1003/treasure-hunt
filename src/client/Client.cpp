@@ -3,16 +3,13 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
 void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
   ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
-}
-
-void PrintErrorNoSpace(size_t free, size_t len) {
-  ERROR_PRINT("Not enough space available [%lu] to store [%lu]\n", free, len);
 }
 
 TreasureHunt::Client::Client() {
@@ -108,8 +105,9 @@ int TreasureHunt::Client::GetServerTreasure() {
   spaceInfo = fs::space(TREASURES_DIR);
   availableSize = spaceInfo.available;
   if (fileSize > availableSize) {
+    ERROR_PRINT("Available [%lu]; Requested [%lu]\n", availableSize, fileSize);
     this->netHandler.SendResponse(CustomProtocol::ERROR);
-    ERROR_PRINT("Warned server that file size is incompatible. Exiting.");
+    ERROR_PRINT("Warned server that file size is incompatible. Exiting.\n");
     exit(1);
   }
   this->netHandler.SendResponse(CustomProtocol::ACK);
@@ -134,6 +132,24 @@ int TreasureHunt::Client::GetServerTreasure() {
   return 0;
 }
 
-void TreasureHunt::Client::ShowTreasure() {
+int TreasureHunt::Client::ShowTreasure() {
+  int ret;
+  std::string command;
 
+  switch (this->treasureType) {
+    case MP4:
+      command = MP4_PLAYER + this->treasureFileName + MP4_OPTIONS;
+      ret = std::system(command.c_str());
+      return ret;
+    case JPG:
+      command = JPG_PLAYER + this->treasureFileName;
+      ret = std::system(command.c_str());
+      return ret;
+    case TXT:
+      command = TXT_PLAYER + this->treasureFileName;
+      ret = std::system(command.c_str());
+      return ret;
+    default:
+      ERROR_PRINT("Unknown file type. Exiting.\n");
+  }
 }
