@@ -72,6 +72,7 @@ int CustomProtocol::PackageHandler::SendCurrentPkg() {
   int ret;
   ret = this->SendPackage(this->currentPkg);
   this->SwapPkg();
+  return ret;
 }
 
 int CustomProtocol::PackageHandler::SendPreviousPkg() {

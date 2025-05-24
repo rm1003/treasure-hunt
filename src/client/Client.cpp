@@ -15,10 +15,6 @@ void PrintErrorNoSpace(size_t free, size_t len) {
   ERROR_PRINT("Not enough space available [%lu] to store [%lu]\n", free, len);
 }
 
-const char *FormatFileName(char *dest, const char *path, const char *name) {
-
-}
-
 TreasureHunt::Client::Client() {
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
