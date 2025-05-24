@@ -23,16 +23,19 @@ class Client {
     Data::Buffer buffer;
     char treasureFileName[CustomProtocol::DATA_SIZE];
     FileType treasureType;
+    Position currentPosition;
     int numberOfFoundTreasures;
     bool hasTreasure[GRID_SIZE][GRID_SIZE];
     bool wasReached[GRID_SIZE][GRID_SIZE];
 
   public:
-    Position currentPosition;
     Client();
     ~Client() {};
     void PrintGrid();
     void PrintEmptySpace();
+    /* */
+    void Move(MsgType mov);
+    /*  */
     int InformServerMovement(MsgType mov);
     /* Return 0 on success. Return 1 if failed */
     int GetServerTreasure();

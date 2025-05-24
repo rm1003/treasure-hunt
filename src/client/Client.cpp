@@ -92,7 +92,9 @@ int TreasureHunt::Client::GetServerTreasure() {
   size_t availableSize;
   size_t dataLen;
   static unsigned char data[CustomProtocol::DATA_SIZE];
-  static bool firstCall = true;
+
+  /* considering that player already moved to new location */
+  this->hasTreasure[this->currentPosition.x][this->currentPosition.y] = true;
 
   /* get file size and test if there is enough disk space */
   msgRet = this->netHandler.RecvGenericData((void*)data, NULL);
@@ -152,4 +154,25 @@ int TreasureHunt::Client::ShowTreasure() {
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");
   }
+}
+
+void TreasureHunt::Client::Move(MsgType mov) {
+  switch (mov) {
+    case CustomProtocol::MOVE_LEFT:
+      this->currentPosition.MoveLeft();
+      break;
+    case CustomProtocol::MOVE_RIGHT:
+      this->currentPosition.MoveRight();
+      break;
+    case CustomProtocol::MOVE_UP:
+      this->currentPosition.MoveUp();
+      break;
+    case CustomProtocol::MOVE_DOWN:
+      this->currentPosition.MoveDown();
+      break;
+    default:
+      ERROR_PRINT("Invalid movement in [Client::Move]. Exiting.\n");
+      exit(1);
+  }
+  this->wasReached[this->currentPosition.x][this->currentPosition.y] = true;
 }

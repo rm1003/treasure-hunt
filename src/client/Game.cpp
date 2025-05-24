@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <termios.h>
 
+using namespace TreasureHunt;
+
 bool IsNotMovementKey(char key) {
   return (key != 'w' && key != 'a' && key != 's' && key != 'd');
 }
@@ -14,6 +16,7 @@ int main() {
   struct termios oldConfT;
   TreasureHunt::Client client;
   char key;
+  int ret;
 
   tcgetattr(STDIN_FILENO, &oldConfT);
   newConfT = oldConfT;
@@ -29,17 +32,30 @@ int main() {
 
     switch(key) {
       case 'a':
-        client.currentPosition.MoveLeft();
+        ret = client.InformServerMovement(CustomProtocol::MOVE_LEFT);
+        if (ret == INVALID_MOVE) continue;
+        client.Move(CustomProtocol::MOVE_LEFT);
         break;
       case 'w':
-        client.currentPosition.MoveUp();
+        ret = client.InformServerMovement(CustomProtocol::MOVE_UP);
+        if (ret == INVALID_MOVE) continue;
+        client.Move(CustomProtocol::MOVE_UP);
         break;
       case 's':
-        client.currentPosition.MoveDown();
+        ret = client.InformServerMovement(CustomProtocol::MOVE_DOWN);
+        if (ret == INVALID_MOVE) continue;
+        client.Move(CustomProtocol::MOVE_DOWN);
         break;
       case 'd':
-        client.currentPosition.MoveRight();
+        ret = client.InformServerMovement(CustomProtocol::MOVE_RIGHT);
+        if (ret == INVALID_MOVE) continue;
+        client.Move(CustomProtocol::MOVE_RIGHT);
         break;
+    }
+
+    if (ret == TREASURE_FOUND) {
+      client.GetServerTreasure();
+      client.ShowTreasure();
     }
 
     client.PrintEmptySpace();
@@ -47,4 +63,6 @@ int main() {
   }
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);
+
+  return 0;
 }
