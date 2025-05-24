@@ -31,6 +31,8 @@ class Client {
     int InformServerMovement(MsgType mov);
     /* Return 0 on success. Return 1 if failed */
     int GetServerTreasure();
+    /* */
+    void ShowTreasure();
 };
 
 } // namespace TreasureHunt

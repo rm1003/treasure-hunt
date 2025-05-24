@@ -162,3 +162,7 @@ int TreasureHunt::Client::GetServerTreasure() {
 
   return 0;
 }
+
+void TreasureHunt::Client::ShowTreasure() {
+
+}
