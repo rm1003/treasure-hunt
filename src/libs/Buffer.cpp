@@ -1,4 +1,7 @@
 #include "Buffer.hpp"
+#include "Logging.hpp"
+#include <algorithm>
+#include <stdlib.h>
 
 Data::Buffer::Buffer() {
   this->store = new unsigned char[BUFFER_SIZE];
@@ -7,11 +10,12 @@ Data::Buffer::Buffer() {
 }
 
 Data::Buffer::~Buffer() {
-  delete[] this->store; 
+  delete[] this->store;
 }
 
-// ==================================================================
-// Read
+//=================================================================//
+// OpenFileForRead
+//=================================================================//
 void Data::Buffer::OpenFileForRead(char *filePath) {
   this->fd = open(filePath, O_RDONLY);
   if (this->fd == -1) {
@@ -21,7 +25,9 @@ void Data::Buffer::OpenFileForRead(char *filePath) {
   return;
 }
 
-// Write
+//=================================================================//
+// OpenFileForWrite
+//=================================================================//
 void Data::Buffer::OpenFileForWrite(char *filePath) {
   this->fd = open(filePath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
   if (this->fd == -1) {
@@ -30,8 +36,10 @@ void Data::Buffer::OpenFileForWrite(char *filePath) {
   }
 }
 
-// Close
-void Data::Buffer::CloseFile(char *filePath) {
+//=================================================================//
+// CloseFile
+//=================================================================//
+void Data::Buffer::CloseFile() {
   if (this->fd == -1) {
     ERROR_PRINT("Failed to close file.\n Exiting...\n");
     exit(1);
@@ -39,9 +47,10 @@ void Data::Buffer::CloseFile(char *filePath) {
   close(this->fd);
   return;
 }
-// ==================================================================
 
-// ==================================================================
+//=================================================================//
+// GetData
+//=================================================================//
 void *Data::Buffer::GetData(size_t len, size_t *actualSize) {
   void *data;
 
@@ -61,6 +70,9 @@ void *Data::Buffer::GetData(size_t len, size_t *actualSize) {
   return data;
 }
 
+//=================================================================//
+// RetrieveBuffer
+//=================================================================//
 int Data::Buffer::RetrieveBuffer() {
   if (this->fd == -1) {
     ERROR_PRINT("No file opened.\n Exiting...\n");
@@ -82,22 +94,26 @@ int Data::Buffer::RetrieveBuffer() {
 
   return 0;
 }
-// ==================================================================
 
-// ==================================================================
+//=================================================================//
+// AppendToBuffer
+//=================================================================//
 int Data::Buffer::AppendToBuffer(void *ptr, size_t len) {
   if (ptr == NULL) {
     ERROR_PRINT("Pointer is NULL.\n Exiting...\n");
     exit(1);
   }
 
-  if (this->offset + len > BUFFER_SIZE) return 1;
+  if (this->offset + len > BUFFER_SIZE) return APPEND_IMPOSSIBLE;
 
   memcpy(this->store + this->offset, ptr, len);
   this->offset += len;
   return 0;
 }
 
+//=================================================================//
+// FlushBuffer
+//=================================================================//
 void Data::Buffer::FlushBuffer() {
   if (this->fd == -1) {
     ERROR_PRINT("No file opened.\n Exiting...\n");
@@ -115,4 +131,3 @@ void Data::Buffer::FlushBuffer() {
 
   return;
 }
-// ==================================================================

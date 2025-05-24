@@ -15,6 +15,10 @@ void PrintErrorNoSpace(size_t free, size_t len) {
   ERROR_PRINT("Not enough space available [%lu] to store [%lu]\n", free, len);
 }
 
+const char *FormatFileName(char *dest, const char *path, const char *name) {
+
+}
+
 TreasureHunt::Client::Client() {
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
@@ -94,9 +98,9 @@ int TreasureHunt::Client::GetServerTreasure() {
   int intRet;
   size_t *fileSize;
   fs::space_info spaceInfo;
-  static bool firstCall = true;
   unsigned char *data;
   size_t dataLen;
+  static bool firstCall = true;
 
   /* get file size and test if there is enough disk space */
   while (1) {
@@ -120,8 +124,8 @@ int TreasureHunt::Client::GetServerTreasure() {
   spaceInfo = fs::space(TREASURES_DIR);
   if (spaceInfo.available < *fileSize) {
     PrintErrorNoSpace(spaceInfo.available, *fileSize);
-    /* fileSize allocated in RetrieveData */
     delete fileSize;
+    delete treasureFileName;
     /* warn server that client does not have enough disk space */
     this->netHandler.SendGenericData(CustomProtocol::ERROR,
                                      (void*)CustomProtocol::NO_SPACE_ERROR,
@@ -130,6 +134,8 @@ int TreasureHunt::Client::GetServerTreasure() {
   }
   this->netHandler.SendAcknowledgement(CustomProtocol::ACK);
 
+  /* considering that treasureFileName is already complete path */
+  this->buffer.OpenFileForWrite(treasureFileName);
   /* loop until END_OF_FILE message */
   while (1) {
     this->netHandler.RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
@@ -145,9 +151,14 @@ int TreasureHunt::Client::GetServerTreasure() {
 
     /* append data to buffer */
     intRet = this->buffer.AppendToBuffer(data, dataLen);
+    if (intRet == Data::APPEND_IMPOSSIBLE) {
+      this->buffer.FlushBuffer();
+    }
   }
 
-  delete this->treasureFileName;
+  this->buffer.FlushBuffer();
+  this->buffer.CloseFile();
+  delete fileSize;
 
   return 0;
 }
