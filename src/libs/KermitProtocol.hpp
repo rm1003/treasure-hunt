@@ -54,7 +54,7 @@ struct KermitPackage {
 }__attribute__((packed));
 
 /* Setting fixed buf len to be double the size of a KermitPackage as
-  * 0xff bytes must be inserted after every 0x88/0x81 sequence */
+ * 0xff bytes must be inserted after every 0x88/0x81 sequence */
 const unsigned long MAX_PACKAGE_SIZE = sizeof(KermitPackage) * 2;
 
 class PackageHandler {
@@ -117,9 +117,8 @@ class NetworkHandler {
   public:
     NetworkHandler();
     ~NetworkHandler();
-    /* Send len bytes in ptr. Wait until acknoledgment or error. Return what
-     * RecvPackage returns */
-    MsgType SendGenericData(MsgType msg, void *ptr, size_t len);
+    /* Send len bytes in ptr. Wait until acknoledgment or error */
+    void SendGenericData(MsgType msg, void *ptr, size_t len);
     /* Does not block. Just unpacks currentPkg */
     MsgType RecvGenericData(void *ptr, size_t *len);
     /* Used by receiver to send response of a message (e.g. ACK). Blocks until
