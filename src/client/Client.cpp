@@ -61,7 +61,7 @@ void TreasureHunt::Client::PrintEmptySpace() {
 int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   MsgType ret;
   netHandler.SendGenericData(mov, NULL, 0);
-  ret = netHandler.RetrieveData(NULL, 0);
+  ret = netHandler.RecvGenericData((void*)this->treasureFileName, NULL);
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;
   } else if (ret == CustomProtocol::ACK) {
@@ -81,9 +81,7 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
         ERROR_PRINT("Not expected return type. Exiting.\n");
         exit(1);
     }
-    this->netHandler.RetrieveData((void**)&this->treasureFileName, NULL);
   }
-
   this->netHandler.InvertToReceiver();
 
   return TREASURE_FOUND;
@@ -91,70 +89,47 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
 
 int TreasureHunt::Client::GetServerTreasure() {
   MsgType msgRet;
-  int intRet;
-  size_t *fileSize;
   fs::space_info spaceInfo;
-  unsigned char *data;
+  int intRet;
+  size_t fileSize;
+  size_t availableSize;
   size_t dataLen;
+  static unsigned char data[CustomProtocol::DATA_SIZE];
   static bool firstCall = true;
 
   /* get file size and test if there is enough disk space */
-  while (1) {
-    intRet = this->netHandler.RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
-    if (intRet != CustomProtocol::REPEATED_MSG) break;
-    if (firstCall) {
-      /* last message was INVERT_REMINDER */
-      this->netHandler.SendGenericData(CustomProtocol::INVERT, NULL, 0);
-      firstCall = false;
-    } else {
-      /* last message was FILE_SIZE */
-      this->netHandler.SendGenericData(CustomProtocol::INVERT, NULL, 0);
-    }
-  }
-  msgRet = this->netHandler.RetrieveData((void**)&fileSize, NULL);
+  msgRet = this->netHandler.RecvGenericData((void*)data, NULL);
   if (msgRet != CustomProtocol::FILE_SIZE) {
-    PrintErrorMsgType(msgRet, "GetServerTreasure/2nd test");
+    PrintErrorMsgType(msgRet, "GetServerTreasure/1st test");
     exit(1);
   }
+  fileSize = *(size_t *)(data);
 
   spaceInfo = fs::space(TREASURES_DIR);
-  if (spaceInfo.available < *fileSize) {
-    PrintErrorNoSpace(spaceInfo.available, *fileSize);
-    delete fileSize;
-    delete treasureFileName;
-    /* warn server that client does not have enough disk space */
-    this->netHandler.SendGenericData(CustomProtocol::ERROR,
-                                     (void*)CustomProtocol::NO_SPACE_ERROR,
-                                     sizeof(CustomProtocol::NO_SPACE_ERROR));
-    return 1;
+  availableSize = spaceInfo.available;
+  if (fileSize > availableSize) {
+    this->netHandler.SendResponse(CustomProtocol::ERROR);
+    ERROR_PRINT("Warned server that file size is incompatible. Exiting.");
+    exit(1);
   }
-  this->netHandler.SendAcknowledgement(CustomProtocol::ACK);
+  this->netHandler.SendResponse(CustomProtocol::ACK);
 
   /* considering that treasureFileName is already complete path */
   this->buffer.OpenFileForWrite(treasureFileName);
-  /* loop until END_OF_FILE message */
   while (1) {
-    this->netHandler.RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
-    intRet = this->netHandler.RetrieveData((void**)&data, &dataLen);
-    /* continue if repeated */
-    if (intRet == CustomProtocol::REPEATED_MSG) {
-      this->netHandler.SendAcknowledgement(CustomProtocol::ACK);
-      continue;
-    }
-    if (intRet == CustomProtocol::END_OF_FILE) {
+    msgRet = this->netHandler.RecvGenericData((void*)data, &dataLen);
+    if (msgRet == CustomProtocol::END_OF_FILE) {
+      this->buffer.FlushBuffer();
+      this->buffer.CloseFile();
       break;
     }
-
     /* append data to buffer */
     intRet = this->buffer.AppendToBuffer(data, dataLen);
     if (intRet == Data::APPEND_IMPOSSIBLE) {
       this->buffer.FlushBuffer();
     }
+    this->netHandler.SendResponse(CustomProtocol::ACK);
   }
-
-  this->buffer.FlushBuffer();
-  this->buffer.CloseFile();
-  delete fileSize;
 
   return 0;
 }

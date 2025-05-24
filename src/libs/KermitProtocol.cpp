@@ -232,11 +232,9 @@ CustomProtocol::NetworkHandler::~NetworkHandler() {
 
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   MsgType ret;
-  this->RecvGenericData(CustomProtocol::WAIT_FOR_VALID_MESSAGE);
-  ret = this->RetrieveData(NULL, 0);
-  if (ret != CustomProtocol::INVERT_REMINDER) {
-    PrintErrorMsgType(ret, "InvertToReceiver");
-    exit(1);
+  ret = this->RecvGenericData(NULL, NULL);
+  while (ret == INVERT_REQUEST) {
+    this->SendResponse(ACK);
+    ret = this->RecvGenericData(NULL, NULL);
   }
-  this->SendGenericData(CustomProtocol::INVERT, NULL, 0);
 }

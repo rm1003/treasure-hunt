@@ -16,7 +16,7 @@ class Client {
   private:
     CustomProtocol::NetworkHandler netHandler;
     Data::Buffer buffer;
-    char *treasureFileName;
+    char treasureFileName[CustomProtocol::DATA_SIZE];
     FileType treasureType;
     int numberOfFoundTreasures;
     bool hasTreasure[GRID_SIZE][GRID_SIZE];

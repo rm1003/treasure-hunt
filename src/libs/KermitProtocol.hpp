@@ -23,14 +23,11 @@ const int TIMEOUT_REACHED = 2;
 const int VALID_NEW_MSG = 3;
 const int INVALID_NEW_MSG = 4;
 
-const int RETURN_AFTER_TIMEOUT = 1;
-const int WAIT_FOR_VALID_MESSAGE = 2;
-
 enum MsgType {
   ACK = 0,
   NACK,
   OK_AND_ACK,
-  INVERT,
+  STOP_GAME,
   FILE_SIZE,
   DATA,
   TXT_FILE_NAME_ACK,
@@ -41,7 +38,7 @@ enum MsgType {
   MOVE_UP,
   MOVE_DOWN,
   MOVE_LEFT,
-  INVERT_REMINDER,
+  INVERT_REQUEST,
   ERROR
 };
 
@@ -115,22 +112,22 @@ class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
 
-    /* Return name of network interface. Make sure to free this pointer */
+    /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
   public:
     NetworkHandler();
     ~NetworkHandler();
-    /* Send len bytes pointer by ptr void pointer. This operation blocks
-     * until ACK is received */
-    void SendGenericData(MsgType msg, void *ptr, size_t len);
-    /* Send ACK; OK_AND_ACK; TXT_FILE_NAME_ACK; VIDEO_FILE_NAME_ACK or
-      * IMG_FILE_NAME_ACK. This operations does not block */
-    void SendAcknowledgement(MsgType msg);
-    /* WAIT_FOR_VALID_MESSAGE: read until RecvPackage returns VALID_NEW_MSG
-     * RETURN_AFTER_TIMEOUT: return if timeout reached or valid new msg arrived */
-    int RecvGenericData(int recvType);
-    /* Return response from Send/Recv operations. No memcpy done if ptr is NULL */
-    MsgType RetrieveData(void **ptr, size_t *len);
+    /* Send len bytes in ptr. Wait until acknoledgment or error. Return what
+     * RecvPackage returns */
+    MsgType SendGenericData(MsgType msg, void *ptr, size_t len);
+    /* Does not block. Just unpacks currentPkg */
+    MsgType RecvGenericData(void *ptr, size_t *len);
+    /* Used by receiver to send response of a message (e.g. ACK). Blocks until
+     * new valid message arrives */
+    void SendResponse(MsgType msg);
+    /* Used by sender to get response of a sent message
+     * Does not block. Just unpacks currentPkg */
+    MsgType RecvResponse();
     /* Receiver calls this method to become sender */
     void InvertToSender();
     /* Sender calls this method to become receiver */
