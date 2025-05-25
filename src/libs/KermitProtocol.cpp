@@ -233,8 +233,9 @@ CustomProtocol::NetworkHandler::~NetworkHandler() {
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   MsgType ret;
   ret = this->RecvGenericData(NULL, NULL);
-  while (ret == INVERT_REQUEST) {
-    this->SendResponse(ACK);
-    ret = this->RecvGenericData(NULL, NULL);
+  if (ret != INVERT_REQUEST) {
+    ERROR_PRINT("Not expected message type in [InvertToReceiver]. Exiting.\n");
+    exit(1);
   }
+  this->SendResponse(ACK);
 }

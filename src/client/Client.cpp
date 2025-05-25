@@ -142,18 +142,17 @@ int TreasureHunt::Client::ShowTreasure() {
     case MP4:
       command = MP4_PLAYER + this->treasureFileName + MP4_OPTIONS;
       ret = std::system(command.c_str());
-      return ret;
     case JPG:
       command = JPG_PLAYER + this->treasureFileName;
       ret = std::system(command.c_str());
-      return ret;
     case TXT:
       command = TXT_PLAYER + this->treasureFileName;
       ret = std::system(command.c_str());
-      return ret;
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");
+      exit(1);
   }
+  return ret;
 }
 
 void TreasureHunt::Client::Move(MsgType mov) {
