@@ -2,7 +2,6 @@
 #define KERMITPROTOCOL_HPP_
 
 #include "RawSocket.hpp"
-#include "Buffer.hpp"
 #include <cstddef>
 
 #define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
@@ -10,7 +9,7 @@
 #define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
-  
+
 const unsigned long DATA_SIZE = 128;
 const unsigned char INIT_MARK = 0x7e;
 const unsigned long DATA_BUFFER_SIZE = 1 << 20;
@@ -24,14 +23,11 @@ const int TIMEOUT_REACHED = 2;
 const int VALID_NEW_MSG = 3;
 const int INVALID_NEW_MSG = 4;
 
-const int RETURN_AFTER_TIMEOUT = 1;
-const int WAIT_FOR_VALID_MESSAGE = 2;
-
 enum MsgType {
   ACK = 0,
   NACK,
   OK_AND_ACK,
-  A_DEFINIR_1,
+  STOP_GAME,
   FILE_SIZE,
   DATA,
   TXT_FILE_NAME_ACK,
@@ -42,9 +38,11 @@ enum MsgType {
   MOVE_UP,
   MOVE_DOWN,
   MOVE_LEFT,
-  A_DEFINIR_2,
+  INVERT_REQUEST,
   ERROR
 };
+
+const char NO_SPACE_ERROR[] = "1";
 
 struct KermitPackage {
   unsigned char initMark;
@@ -56,7 +54,7 @@ struct KermitPackage {
 }__attribute__((packed));
 
 /* Setting fixed buf len to be double the size of a KermitPackage as
-  * 0xff bytes must be inserted after every 0x88/0x81 sequence */
+ * 0xff bytes must be inserted after every 0x88/0x81 sequence */
 const unsigned long MAX_PACKAGE_SIZE = sizeof(KermitPackage) * 2;
 
 class PackageHandler {
@@ -88,6 +86,10 @@ class PackageHandler {
     /* Send current package. Make sure to initialize it with InitPackage.
      * It returns whatever RecvPackage returns after Send is called */
     int SendPackage(struct KermitPackage *pkg);
+    /* Verify checksum field of currentPkg */
+    bool VerifyChecksum();
+    /* make prevPkg point to pkgs[currentPkgIdx] and update currentPkg */
+     void SwapPkg();
   public:
     PackageHandler(const char *netIntName);
     ~PackageHandler();
@@ -102,39 +104,33 @@ class PackageHandler {
     /* Receive package in currentPkg. This method implements timeout. It may
      * return REPEATED_MSG, TIMEOUT_REACHED, VALID_NEW_MSG or INVALID_NEW_MSG. */
     int RecvPackage();
-    /* If one dont want to overwrite currentPkg with Recv/InitPackage, call
-     * this method: currentPkg will be then pointed by prevPkg */
-    void SwapPkg();
     /* It returns const pointer to last received/initiated package */
     const struct KermitPackage *GetCurrentPkg();
-    /* Verify checksum field of currentPkg */
-    bool VerifyChecksum();
 };
 
 class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
 
-    /* Return name of network interface. Make sure to free this pointer */
+    /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
   public:
     NetworkHandler();
     ~NetworkHandler();
-    /* Write incoming data to file until END_OF_FILE message is read */
-    void RecvFile(char *filePath);
-    /* Send data in file and END_OF_FILE message when done */
-    void SendFile(char *filePath);
-    /* Send len bytes pointer by ptr void pointer. This operation blocks
-     * until ACK is received */
+    /* Send len bytes in ptr. Wait until acknoledgment or error */
     void SendGenericData(MsgType msg, void *ptr, size_t len);
-    /* Send ACK; OK_AND_ACK; TXT_FILE_NAME_ACK; VIDEO_FILE_NAME_ACK or
-      * IMG_FILE_NAME_ACK. This operations does not block */
-    void SendAcknowledgement(MsgType msg);
-    /* WAIT_FOR_VALID_MESSAGE: read until RecvPackage returns VALID_NEW_MSG
-     * RETURN_AFTER_TIMEOUT: return if timeout reached or valid new msg arrived */
-    int RecvGenericData(int recvType);
-    /* Return response from Send/Recv operations. No memcpy done if ptr is NULL */
-    MsgType RetrieveData(void **ptr, size_t *len);
+    /* Does not block. Just unpacks currentPkg */
+    MsgType RecvGenericData(void *ptr, size_t *len);
+    /* Used by receiver to send response of a message (e.g. ACK). Blocks until
+     * new valid message arrives */
+    void SendResponse(MsgType msg);
+    /* Used by sender to get response of a sent message
+     * Does not block. Just unpacks currentPkg */
+    MsgType RecvResponse();
+    /* Receiver calls this method to become sender */
+    void InvertToSender();
+    /* Sender calls this method to become receiver */
+    void InvertToReceiver();
 };
 
 }
