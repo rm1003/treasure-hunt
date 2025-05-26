@@ -48,6 +48,9 @@ CustomProtocol::PackageHandler::~PackageHandler() {
   delete this->sokt;
 }
 
+//===================================================================
+// InitPackage
+//===================================================================
 int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
                                                 void *data,
                                                 size_t len) {
@@ -68,6 +71,9 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   return 0;
 }
 
+//===================================================================
+// SendCurrentPkg
+//===================================================================
 int CustomProtocol::PackageHandler::SendCurrentPkg() {
   int ret;
   ret = this->SendPackage(this->currentPkg);
@@ -75,10 +81,16 @@ int CustomProtocol::PackageHandler::SendCurrentPkg() {
   return ret;
 }
 
+//===================================================================
+// SendPreviousPkg
+//===================================================================
 int CustomProtocol::PackageHandler::SendPreviousPkg() {
   return this->SendPackage(this->prevPkg);
 }
 
+//===================================================================
+// RecvPackage
+//===================================================================
 int CustomProtocol::PackageHandler::RecvPackage() {
   int ret;
   unsigned long init = timestamp();
@@ -95,7 +107,7 @@ int CustomProtocol::PackageHandler::RecvPackage() {
         return INVALID_NEW_MSG;
       }
       if (this->currentPkg->idx == this->lastRecvIdx) {
-        DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n")
+        DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n");
         return REPEATED_MSG;
       }
       this->lastRecvIdx = this->currentPkg->idx;
@@ -106,20 +118,32 @@ int CustomProtocol::PackageHandler::RecvPackage() {
   return TIMEOUT_REACHED;
 }
 
+//===================================================================
+// SwapPkg
+//===================================================================
 void CustomProtocol::PackageHandler::SwapPkg() {
   this->prevPkg = this->currentPkg;
   this->currentPkgIdx = INC_MOD_K(this->currentPkgIdx, 2);
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
 }
 
+//===================================================================
+// GetCurrentPkg
+//===================================================================
 const struct KermitPackage* CustomProtocol::PackageHandler::GetCurrentPkg() {
   return this->currentPkg;
 }
 
+//===================================================================
+// SetInitMarkPkg
+//===================================================================
 void CustomProtocol::PackageHandler::SetInitMarkPkg() {
   this->currentPkg->initMark = INIT_MARK;
 }
 
+//===================================================================
+// ChecksumResolver
+//===================================================================
 unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
   unsigned long sum;
   size_t it = 0;
@@ -140,6 +164,9 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
   return (unsigned char)~sum;
 }
 
+//===================================================================
+// Append0xff
+//===================================================================
 void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned char *pkgBytes = (unsigned char *)(pkg);
   unsigned long pkgIt = 0;
@@ -157,6 +184,9 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
+//===================================================================
+// Remove0xff
+//===================================================================
 void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
@@ -173,29 +203,46 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
+//===================================================================
+// VerifyChecksum
+//===================================================================
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
   unsigned char sum = this->currentPkg->checkSum + ~this->ChecksumResolver();
   return (sum == 0xff);
 }
 
+//===================================================================
+// IsMsgKermitPackage
+//===================================================================
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
   return (currentPkg->initMark == INIT_MARK);
 }
 
+//===================================================================
+// GetPkgSize
+//===================================================================
 size_t CustomProtocol::PackageHandler::GetPkgSize(struct KermitPackage *pkg) {
   size_t sizePkgNoData = sizeof(KermitPackage) - sizeof(KermitPackage::data);
   return sizePkgNoData + pkg->size;
 }
 
+//===================================================================
+// SendPackage
+//===================================================================
 int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
   this->Append0xff(pkg);
   return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
 }
 
+
+
 //=================================================================//
 // CustomProtocol::NetworkHandler
 //=================================================================//
 
+//===================================================================
+// GetEthIntName
+//===================================================================
 const char *CustomProtocol::NetworkHandler::GetEthIntName() {
   struct if_nameindex *ifArr;
   struct if_nameindex *ifIt;
@@ -220,6 +267,9 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
   return NULL;
 }
 
+//===================================================================
+// NetworkHandler
+//===================================================================
 CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
   this->pkgHandler = new PackageHandler(ethIntName);
@@ -230,6 +280,44 @@ CustomProtocol::NetworkHandler::~NetworkHandler() {
   delete this->pkgHandler;
 }
 
+//===================================================================
+// SendGeneticData
+//===================================================================
+void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
+
+}
+
+//===================================================================
+// RecvGenericData
+//===================================================================
+CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *ptr, size_t *len) {
+
+}
+
+//===================================================================
+// RecvResponse
+//===================================================================
+CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse() {
+
+}
+
+//===================================================================
+// SendResponse
+//===================================================================
+void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
+
+}
+
+//===================================================================
+// InvertToSender
+//===================================================================
+void CustomProtocol::NetworkHandler::InvertToSender() {
+
+}
+
+//===================================================================
+// InvertToReceiver
+//===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   MsgType ret;
   ret = this->RecvGenericData(NULL, NULL);
@@ -238,4 +326,5 @@ void CustomProtocol::NetworkHandler::InvertToReceiver() {
     exit(1);
   }
   this->SendResponse(ACK);
+  return;
 }
