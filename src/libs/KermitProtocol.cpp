@@ -161,7 +161,7 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     it++;
   }
 
-  return (unsigned char)~sum;
+  return (unsigned char)sum;
 }
 
 //===================================================================
@@ -192,7 +192,7 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long pkgIt = 0;
   unsigned char *pkgBytes = (unsigned char *)(pkg);
 
-  for (; rawBytesIt < MAX_PACKAGE_SIZE; pkgIt++, rawBytesIt++) {
+  for (; rawBytesIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
     pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x81 || pkgBytes[pkgIt] == 0x88) {
       rawBytesIt++;
@@ -207,8 +207,7 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
 // VerifyChecksum
 //===================================================================
 bool CustomProtocol::PackageHandler::VerifyChecksum() {
-  unsigned char sum = this->currentPkg->checkSum + ~this->ChecksumResolver();
-  return (sum == 0xff);
+  return (this->currentPkg->checkSum == this->ChecksumResolver());
 }
 
 //===================================================================
