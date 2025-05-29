@@ -240,6 +240,20 @@ int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
 //=================================================================//
 
 //===================================================================
+// NetworkHandler
+//===================================================================
+CustomProtocol::NetworkHandler::NetworkHandler() {
+  const char *ethIntName = this->GetEthIntName();
+  this->pkgHandler = new PackageHandler(ethIntName);
+  free((void*)ethIntName);
+  this->isFirstPkg = true;
+}
+
+CustomProtocol::NetworkHandler::~NetworkHandler() {
+  delete this->pkgHandler;
+}
+
+//===================================================================
 // GetEthIntName
 //===================================================================
 const char *CustomProtocol::NetworkHandler::GetEthIntName() {
@@ -266,88 +280,107 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
   return NULL;
 }
 
-//===================================================================
-// NetworkHandler
-//===================================================================
-CustomProtocol::NetworkHandler::NetworkHandler() {
-  const char *ethIntName = this->GetEthIntName();
-  this->pkgHandler = new PackageHandler(ethIntName);
-  free((void*)ethIntName);
-}
 
-CustomProtocol::NetworkHandler::~NetworkHandler() {
-  delete this->pkgHandler;
+//===================================================================
+// RecvPackage
+//===================================================================
+void RecvPackage(const KermitPackage *retPkg, void *ptr, size_t *len) {
+  // If ptr and len is NULL return MsgType (Invert case)
+  if (!ptr && !len) {
+    return;
+  }
+
+  memcpy(ptr, retPkg->data, retPkg->size);
+  *len = retPkg->size;
+  return ;
 }
 
 //===================================================================
 // SendGeneticData
 //===================================================================
 void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
-  MsgType feedBack;
-  int status;
+
+  int feedBack;
+
+  if (len > DATA_SIZE) {
+    ERROR_PRINT("len is larger than DATA_SIZE.\n Exiting...\n");
+    exit(1);
+  }
+  if (len < 0) {
+    ERROR_PRINT("len is smaller than 0.\n Exiting...\n");
+    exit(1);
+  }
 
   this->pkgHandler->InitPackage(msg, ptr, len);
-  while (true) {
-    status = this->pkgHandler->SendCurrentPkg();
+  this->pkgHandler->SendCurrentPkg();
 
-    if (status == TIMEOUT_REACHED || status == REPEATED_MSG) {
-      continue;
+  while (1) {
+    feedBack = this->pkgHandler->RecvPackage();
+
+    if (feedBack == TIMEOUT_REACHED || feedBack == INVALID_NEW_MSG) {
+      this->pkgHandler->SendPreviousPkg();
+    } else if (feedBack == VALID_NEW_MSG) {
+      break;
     }
-
-    feedBack = this->RecvResponse();
-
-    if (feedBack == ACK || feedBack == ERROR) {
-      return;
-    }
-  } 
+  }
+  return;
 }
 
 //===================================================================
 // RecvGenericData
 //===================================================================
 CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *ptr, size_t *len) {
-  const KermitPackage *pkg = this->pkgHandler->GetCurrentPkg();
-  MsgType pkgType = static_cast<MsgType>(pkg->type);
 
-  if (ptr && len) {
-    memcpy(ptr, pkg->data, pkg->size);
-    *len = pkg->size;
+  const KermitPackage *retPkg;
+  int feedBack;
+  if (this->isFirstPkg) {
+    while (1) {
+      feedBack = this->pkgHandler->RecvPackage();
+      if (feedBack == VALID_NEW_MSG) {
+        retPkg = this->pkgHandler->GetCurrentPkg();
+        this->RecvPackage(retPkg, ptr, len);
+        this->isFirstPkg = false;
+        return  static_cast<MsgType>(retPkg->type);
+      }
+    }
+  } else {
+    // Loop ?
+    retPkg = this->pkgHandler->GetCurrentPkg();
+    this->RecvPackage(retPkg, ptr, len);
+    return  static_cast<MsgType>(retPkg->type);
   }
-
-  return pkgType;
 }
 
 //===================================================================
 // SendResponse
 //===================================================================
 void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
-  int ret;
+
+  int feedBack;
+
+  this->pkgHandler->InitPackage(msg, NULL, NULL);
+  this->pkgHandler->SendCurrentPkg();
   while (1) {
-    this->pkgHandler->InitPackage(msg, nullptr, 0);
-    this->pkgHandler->SendCurrentPkg();
+    feedBack = this->pkgHandler->RecvPackage();
 
-    ret = this->pkgHandler->RecvPackage();
-
-    if (ret == TIMEOUT_REACHED) continue;
-    if (ret == REPEATED_MSG) {
+    if (feedBack == REPEATED_MSG) {
       this->pkgHandler->SendPreviousPkg();
+    } else if (feedBack == VALID_NEW_MSG){
+      return; 
+    } else {
       continue;
     }
-    if (ret == INVALID_NEW_MSG) {
-      this->pkgHandler->InitPackage(ERROR, nullptr, 0);
-      this->pkgHandler->SendCurrentPkg();
-      continue;
-    }
-    return;
   }
 }
 
 //===================================================================
 // RecvResponse
 //===================================================================
-CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse() {
-  const KermitPackage *pkg = this->pkgHandler->GetCurrentPkg();
-  return static_cast<MsgType>(pkg->type);
+CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse(void *ptr, size_t *len) {
+  const KermitPackage *retPkg;
+  retPkg = this->pkgHandler->GetCurrentPkg();
+  this->RecvPackage(retPkg, ptr, len);
+  return static_cast<MsgType>(retPkg->type);
 }
 
 //===================================================================
@@ -355,7 +388,7 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse() {
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToSender() {
   this->SendGenericData(INVERT_REQUEST, NULL, 0);
-  MsgType feedBack = this->RecvResponse();
+  MsgType feedBack = this->RecvResponse(NULL, NULL);
 
   if (feedBack != ACK) {
     ERROR_PRINT("Expected ACK in [InvertToSender], but got %d. Exiting.\n", feedBack);

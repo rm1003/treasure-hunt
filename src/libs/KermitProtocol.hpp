@@ -111,9 +111,13 @@ class PackageHandler {
 class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
+    bool isFirstPkg;
 
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
+
+    void RecvPackage(const KermitPackage *retPkg, void *ptr, size_t *len);
+
   public:
     NetworkHandler();
     ~NetworkHandler();
@@ -126,7 +130,7 @@ class NetworkHandler {
     void SendResponse(MsgType msg);
     /* Used by sender to get response of a sent message
      * Does not block. Just unpacks currentPkg */
-    MsgType RecvResponse();
+    MsgType RecvResponse(void *ptr, size_t *len);
     /* Receiver calls this method to become sender */
     void InvertToSender();
     /* Sender calls this method to become receiver */
