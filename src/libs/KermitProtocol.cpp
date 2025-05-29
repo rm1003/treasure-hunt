@@ -282,7 +282,7 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
 
 
 //===================================================================
-// RecvPackage
+// Recv
 //===================================================================
 void CustomProtocol::NetworkHandler::Recv(const KermitPackage *retPkg, 
                                           void *ptr, size_t *len) {
@@ -323,7 +323,6 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr,
       return;
     }
   }
-  return;
 }
 
 //===================================================================
@@ -383,9 +382,9 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse(void *ptr,
 // InvertToSender
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToSender() {
-  /* Since receiver called SendResponse(), feedBack should be ACK */
+  /* Since receiver called SendResponse(), feedBack should be INVERT */
   MsgType feedBack = this->RecvResponse(NULL, NULL);
-  if (feedBack != ACK) {
+  if (feedBack != INVERT) {
     ERROR_PRINT("Expected ACK in [InvertToSender], but got %d. Exiting.\n", feedBack);
     exit(1);
   }
@@ -397,6 +396,6 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   MsgType ret;
-  this->SendGenericData(ACK, NULL, 0);
+  this->SendGenericData(INVERT, NULL, 0);
   return;
 }

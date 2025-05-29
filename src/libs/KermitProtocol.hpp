@@ -38,7 +38,7 @@ enum MsgType {
   MOVE_UP,
   MOVE_DOWN,
   MOVE_LEFT,
-  A_DEFINIR_1,
+  INVERT,
   ERROR
 };
 
