@@ -284,7 +284,8 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
 //===================================================================
 // RecvPackage
 //===================================================================
-void RecvPackage(const KermitPackage *retPkg, void *ptr, size_t *len) {
+void CustomProtocol::NetworkHandler::Recv(const KermitPackage *retPkg, 
+                                          void *ptr, size_t *len) {
   // If ptr and len is NULL return MsgType (Invert case)
   if (!ptr && !len) {
     return;
@@ -292,22 +293,22 @@ void RecvPackage(const KermitPackage *retPkg, void *ptr, size_t *len) {
 
   memcpy(ptr, retPkg->data, retPkg->size);
   *len = retPkg->size;
-  return ;
+  return;
 }
 
 //===================================================================
 // SendGeneticData
 //===================================================================
-void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
-
+void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, 
+                                                    size_t len) {
   int feedBack;
 
   if (len > DATA_SIZE) {
-    ERROR_PRINT("len is larger than DATA_SIZE.\n Exiting...\n");
+    ERROR_PRINT("len is larger than DATA_SIZE. Exiting.\n");
     exit(1);
   }
   if (len < 0) {
-    ERROR_PRINT("len is smaller than 0.\n Exiting...\n");
+    ERROR_PRINT("len is smaller than 0. Exiting.\n");
     exit(1);
   }
 
@@ -316,11 +317,10 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
 
   while (1) {
     feedBack = this->pkgHandler->RecvPackage();
-
     if (feedBack == TIMEOUT_REACHED || feedBack == INVALID_NEW_MSG) {
       this->pkgHandler->SendPreviousPkg();
-    } else if (feedBack == VALID_NEW_MSG) {
-      break;
+    } else {
+      return;
     }
   }
   return;
@@ -329,8 +329,8 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
 //===================================================================
 // RecvGenericData
 //===================================================================
-CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *ptr, size_t *len) {
-
+CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *ptr, 
+                                                                        size_t *len) {
   const KermitPackage *retPkg;
   int feedBack;
   if (this->isFirstPkg) {
@@ -338,16 +338,15 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
       feedBack = this->pkgHandler->RecvPackage();
       if (feedBack == VALID_NEW_MSG) {
         retPkg = this->pkgHandler->GetCurrentPkg();
-        this->RecvPackage(retPkg, ptr, len);
+        this->Recv(retPkg, ptr, len);
         this->isFirstPkg = false;
-        return  static_cast<MsgType>(retPkg->type);
+        return (MsgType)retPkg->type;
       }
     }
   } else {
-    // Loop ?
     retPkg = this->pkgHandler->GetCurrentPkg();
-    this->RecvPackage(retPkg, ptr, len);
-    return  static_cast<MsgType>(retPkg->type);
+    this->Recv(retPkg, ptr, len);
+    return (MsgType)retPkg->type;
   }
 }
 
@@ -355,20 +354,16 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
 // SendResponse
 //===================================================================
 void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
-
   int feedBack;
 
-  this->pkgHandler->InitPackage(msg, NULL, NULL);
+  this->pkgHandler->InitPackage(msg, NULL, 0);
   this->pkgHandler->SendCurrentPkg();
   while (1) {
     feedBack = this->pkgHandler->RecvPackage();
-
     if (feedBack == REPEATED_MSG) {
       this->pkgHandler->SendPreviousPkg();
     } else if (feedBack == VALID_NEW_MSG){
       return; 
-    } else {
-      continue;
     }
   }
 }
@@ -376,20 +371,20 @@ void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
 //===================================================================
 // RecvResponse
 //===================================================================
-CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse(void *ptr, size_t *len) {
+CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvResponse(void *ptr, 
+                                                                    size_t *len) {
   const KermitPackage *retPkg;
   retPkg = this->pkgHandler->GetCurrentPkg();
-  this->RecvPackage(retPkg, ptr, len);
-  return static_cast<MsgType>(retPkg->type);
+  this->Recv(retPkg, ptr, len);
+  return (MsgType)retPkg->type;
 }
 
 //===================================================================
 // InvertToSender
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToSender() {
-  this->SendGenericData(INVERT_REQUEST, NULL, 0);
+  /* Since receiver called SendResponse(), feedBack should be ACK */
   MsgType feedBack = this->RecvResponse(NULL, NULL);
-
   if (feedBack != ACK) {
     ERROR_PRINT("Expected ACK in [InvertToSender], but got %d. Exiting.\n", feedBack);
     exit(1);
@@ -402,11 +397,6 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   MsgType ret;
-  ret = this->RecvGenericData(NULL, NULL);
-  if (ret != INVERT_REQUEST) {
-    ERROR_PRINT("Not expected message type in [InvertToReceiver]. Exiting.\n");
-    exit(1);
-  }
-  this->SendResponse(ACK);
+  this->SendGenericData(ACK, NULL, 0);
   return;
 }

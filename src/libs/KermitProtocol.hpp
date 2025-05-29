@@ -38,7 +38,7 @@ enum MsgType {
   MOVE_UP,
   MOVE_DOWN,
   MOVE_LEFT,
-  INVERT_REQUEST,
+  A_DEFINIR_1,
   ERROR
 };
 
@@ -116,7 +116,7 @@ class NetworkHandler {
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
 
-    void RecvPackage(const KermitPackage *retPkg, void *ptr, size_t *len);
+    void Recv(const KermitPackage *retPkg, void *ptr, size_t *len);
 
   public:
     NetworkHandler();
