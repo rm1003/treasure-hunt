@@ -33,23 +33,7 @@ const char *GetEthIntName() {
 }
 
 int main() {
-  const char *ethName = GetEthIntName();
-  if (ethName == NULL) {
-    ERROR_PRINT("Could not get interface name. Exiting.\n");
-    exit(1);
-  } else {
-    DEBUG_PRINT("Interface name [%s]\n", ethName);
-  }
-  CustomProtocol::PackageHandler pkgHandler(ethName);
+  CustomProtocol::NetworkHandler netHandler;
 
-  while(1) {
-    int ret = pkgHandler.RecvPackage();
-    DEBUG_PRINT("RecvPackage ret [%d]\n", ret);
-    if (ret == CustomProtocol::TIMEOUT_REACHED) {
-      continue;
-    }
-    const struct KermitPackage* pkg = pkgHandler.GetCurrentPkg();
-    DEBUG_PRINT("Package data received [%s]\n", pkg->data);
-  }
-  free((void*)ethName);
+  netHandler.SendGenericData(CustomProtocol::DATA, (void*)"Oi", 3);
 }
