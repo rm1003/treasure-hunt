@@ -36,7 +36,12 @@ const char *GetEthIntName() {
 int main() {
   CustomProtocol::NetworkHandler netHandler;
   char str[] = "Ola mundo!";
+  char recv[10];
   netHandler.SendGenericData(CustomProtocol::DATA, str, sizeof(str));
   MsgType m = netHandler.RecvResponse(NULL, NULL);
   assert(m == CustomProtocol::ACK);
+  netHandler.InvertToReceiver();
+  netHandler.RecvGenericData(recv, NULL);
+  puts(recv);
+  netHandler.SendResponse(CustomProtocol::ACK);
 }

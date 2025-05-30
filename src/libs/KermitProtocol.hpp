@@ -111,7 +111,7 @@ class PackageHandler {
 class NetworkHandler {
   private:
     PackageHandler *pkgHandler;
-    bool isFirstPkg;
+    bool isFirstRecv;
 
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();

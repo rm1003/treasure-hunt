@@ -244,7 +244,7 @@ CustomProtocol::NetworkHandler::NetworkHandler() {
   const char *ethIntName = this->GetEthIntName();
   this->pkgHandler = new PackageHandler(ethIntName);
   free((void*)ethIntName);
-  this->isFirstPkg = true;
+  this->isFirstRecv = true;
 }
 
 CustomProtocol::NetworkHandler::~NetworkHandler() {
@@ -319,6 +319,7 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr,
       // DEBUG_PRINT("Sending previous pkg in [SendGenericData]\n");
       this->pkgHandler->SendPreviousPkg();
     } else {
+      this->isFirstRecv = false;
       return;
     }
   }
@@ -332,13 +333,13 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
   const KermitPackage *retPkg;
   int feedBack;
 
-  if (this->isFirstPkg) {
+  if (this->isFirstRecv) {
     while (1) {
       feedBack = this->pkgHandler->RecvPackage();
       if (feedBack == VALID_NEW_MSG) {
         retPkg = this->pkgHandler->GetCurrentPkg();
         this->Recv(retPkg, ptr, len);
-        this->isFirstPkg = false;
+        this->isFirstRecv = false;
         return (MsgType)retPkg->type;
       }
     }
