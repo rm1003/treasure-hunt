@@ -62,7 +62,7 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
   }
   this->currentPkg->checkSum = this->ChecksumResolver();
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
-  DEBUG_PRINT("Updated last used index [%d].\n", this->lastUsedIdx);
+  // DEBUG_PRINT("Updated last used index [%d].\n", this->lastUsedIdx);
 
   return 0;
 }

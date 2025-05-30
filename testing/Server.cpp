@@ -33,20 +33,9 @@ const char *GetEthIntName() {
 }
 
 int main() {
-  const char *ethName = GetEthIntName();
-  if (ethName == NULL) {
-    ERROR_PRINT("Could not get interface name. Exiting.\n");
-    exit(1);
-  } else {
-    DEBUG_PRINT("Interface name [%s]\n", ethName);
-  }
-  CustomProtocol::PackageHandler pkgHandler(ethName);
-  char string[] = "Oi meu nome é fernando, essa eh uma mensagem!";
-  while(1) {
-    pkgHandler.InitPackage(MsgType::DATA, string, sizeof(string));
-    int ret = pkgHandler.SendCurrentPkg();
-    sleep(1);
-    DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
-  }
-  free((void*)ethName);
+  CustomProtocol::NetworkHandler netHandler;
+  char str[10];
+  netHandler.RecvGenericData(str, NULL);
+  puts(str);
+  netHandler.SendResponse(CustomProtocol::ACK);
 }

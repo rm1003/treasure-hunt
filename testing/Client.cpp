@@ -2,6 +2,7 @@
 
 #include "../src/libs/KermitProtocol.hpp"
 #include "../src/libs/Logging.hpp"
+#include <cassert>
 #include <cstdio>
 
 #include <cstring>
@@ -34,6 +35,8 @@ const char *GetEthIntName() {
 
 int main() {
   CustomProtocol::NetworkHandler netHandler;
-
-  netHandler.SendGenericData(CustomProtocol::DATA, (void*)"Oi", 3);
+  char str[] = "Ola mundo!";
+  netHandler.SendGenericData(CustomProtocol::DATA, str, sizeof(str));
+  MsgType m = netHandler.RecvResponse(NULL, NULL);
+  assert(m == CustomProtocol::ACK);
 }
