@@ -316,8 +316,14 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr,
   while (1) {
     feedBack = this->pkgHandler->RecvPackage();
     if (feedBack == TIMEOUT_REACHED || feedBack == INVALID_NEW_MSG) {
-      // DEBUG_PRINT("Sending previous pkg in [SendGenericData]\n");
       this->pkgHandler->SendPreviousPkg();
+    } else if (feedBack == REPEATED_MSG) {
+      if (this->pkgHandler->GetCurrentPkg()->type == INVERT) {
+        this->pkgHandler->SendPreviousPkg();
+      } else {
+        ERROR_PRINT("Unexpected [REPEATED_MSG] in SendGenericData. Exiting.");
+        exit(1);
+      }
     } else {
       this->isFirstRecv = false;
       return;

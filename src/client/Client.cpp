@@ -141,6 +141,8 @@ void TreasureHunt::Client::GetServerTreasure() {
 
     this->netHandler.SendResponse(CustomProtocol::ACK);
   } while(msgRet != CustomProtocol::END_OF_FILE);
+
+  this->netHandler.InvertToSender();
 }
 
 int TreasureHunt::Client::ShowTreasure() {
