@@ -18,6 +18,8 @@ TreasureHunt::Client::Client() {
   memset(this->wasReached, 0, sizeof(this->wasReached));
   this->wasReached[INI_X][INI_Y] = true;
   this->hasTreasure[INI_X][INI_Y] = false;
+  this->filePath[0] = '\0';
+  strcpy(filePath, TREASURES_DIR);
 }
 
 void TreasureHunt::Client::PrintGrid() {
@@ -57,8 +59,9 @@ void TreasureHunt::Client::PrintEmptySpace() {
 
 int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   MsgType ret;
+  char *treasureName = &this->filePath[sizeof(TREASURES_DIR) - 1];
   netHandler.SendGenericData(mov, NULL, 0);
-  ret = netHandler.RecvGenericData((void*)this->treasureFileName, NULL);
+  ret = netHandler.RecvGenericData((void*)treasureName, NULL);
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;
   } else if (ret == CustomProtocol::ACK) {
@@ -81,10 +84,14 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   }
   this->netHandler.InvertToReceiver();
 
+  DEBUG_PRINT("Raw treasureFileName [%s]\n", this->treasureFileName);
+
+  this->numberOfFoundTreasures++;
+
   return TREASURE_FOUND;
 }
 
-int TreasureHunt::Client::GetServerTreasure() {
+void TreasureHunt::Client::GetServerTreasure() {
   MsgType msgRet;
   fs::space_info spaceInfo;
   int intRet;
@@ -114,24 +121,26 @@ int TreasureHunt::Client::GetServerTreasure() {
   }
   this->netHandler.SendResponse(CustomProtocol::ACK);
 
-  /* considering that treasureFileName is already complete path */
-  this->buffer.OpenFileForWrite(treasureFileName);
-  while (1) {
+  this->buffer.OpenFileForWrite(filePath);
+  do {
     msgRet = this->netHandler.RecvGenericData((void*)data, &dataLen);
     if (msgRet == CustomProtocol::END_OF_FILE) {
       this->buffer.FlushBuffer();
       this->buffer.CloseFile();
-      break;
-    }
-    /* append data to buffer */
-    intRet = this->buffer.AppendToBuffer(data, dataLen);
-    if (intRet == Data::APPEND_IMPOSSIBLE) {
-      this->buffer.FlushBuffer();
-    }
-    this->netHandler.SendResponse(CustomProtocol::ACK);
-  }
+      if (numberOfFoundTreasures == TOTAL_TREASURES) {
 
-  return 0;
+      }
+    } else if (msgRet == CustomProtocol::DATA) {
+      intRet = this->buffer.AppendToBuffer(data, dataLen);
+      if (intRet == Data::APPEND_IMPOSSIBLE)
+        this->buffer.FlushBuffer();
+    } else {
+      PrintErrorMsgType(msgRet, "GetServerTreasure");
+      exit(1);
+    }
+
+    this->netHandler.SendResponse(CustomProtocol::ACK);
+  } while(msgRet != CustomProtocol::END_OF_FILE);
 }
 
 int TreasureHunt::Client::ShowTreasure() {
@@ -140,13 +149,13 @@ int TreasureHunt::Client::ShowTreasure() {
 
   switch (this->treasureType) {
     case MP4:
-      command = MP4_PLAYER + this->treasureFileName + MP4_OPTIONS;
+      command = MP4_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case JPG:
-      command = JPG_PLAYER + this->treasureFileName;
+      command = JPG_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case TXT:
-      command = TXT_PLAYER + this->treasureFileName;
+      command = TXT_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");

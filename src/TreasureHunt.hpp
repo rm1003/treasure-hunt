@@ -7,7 +7,7 @@ const int TOTAL_TREASURES = 8;
 const int GRID_SIZE = 8;
 const int INI_X = 0;
 const int INI_Y = 0;
-const char TREASURES_DIR[] = "./objects";
+const char TREASURES_DIR[] = "./objects/";
 
 enum FileType {
   TXT = 1,

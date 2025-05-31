@@ -1,5 +1,6 @@
 clientT
 serverT
+objects/
 # testing/
 bin/
 build/

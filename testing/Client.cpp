@@ -4,11 +4,15 @@
 #include "../src/libs/Logging.hpp"
 #include <cassert>
 #include <cstdio>
-
+#include <string>
 #include <cstring>
 
 using CustomProtocol::MsgType;
-using CustomProtocol::KermitPackage;
+
+const std::string MP4_PLAYER  = "vlc ";
+const std::string MP4_OPTIONS = "--play-and-exit ";
+const std::string JPG_PLAYER  = "eog ";
+const std::string TXT_PLAYER  = "xed ";
 
 const char *GetEthIntName() {
   struct if_nameindex *ifArr, *ifIt;
@@ -33,7 +37,12 @@ const char *GetEthIntName() {
   return NULL;
 }
 
-int main() {
+#include <filesystem>
+#include <iostream>
+namespace fs = std::filesystem;
+
+int main(int argc, char *argv[]) {
+  /* Test InvertToReceiver
   CustomProtocol::NetworkHandler netHandler;
   char str[] = "Ola mundo!";
   char recv[10];
@@ -44,4 +53,12 @@ int main() {
   netHandler.RecvGenericData(recv, NULL);
   puts(recv);
   netHandler.SendResponse(CustomProtocol::ACK);
+  */
+  /* Test system */
+  std::string execPath = fs::absolute(argv[0]).parent_path().string();
+  std::string txt = execPath + "/" + "../../objects/3.jpg";
+
+  std::string command;
+  command = JPG_PLAYER + txt;
+  std::system(command.c_str());
 }
