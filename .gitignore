@@ -4,6 +4,7 @@ serverT
 bin/
 build/
 *.vscode
+*.mp4
 # Object files
 *.o
 *.ko

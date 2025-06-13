@@ -116,7 +116,7 @@ class NetworkHandler {
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
 
-    void Recv(const KermitPackage *retPkg, void *ptr, size_t *len);
+    void TransferData(const KermitPackage *retPkg, void *ptr, size_t *len);
 
   public:
     NetworkHandler();

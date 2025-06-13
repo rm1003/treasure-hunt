@@ -1,6 +1,7 @@
 #include "Buffer.hpp"
 #include "Logging.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <stdlib.h>
 
 Data::Buffer::Buffer() {
@@ -88,11 +89,7 @@ int Data::Buffer::RetrieveBuffer() {
   this->offset = 0;
   this->activeSize = numBytes;
 
-  if (numBytes == 0) {
-    return 1;
-  }
-
-  return 0;
+  return numBytes;
 }
 
 //=================================================================//

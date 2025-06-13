@@ -127,6 +127,7 @@ int TreasureHunt::Client::GetServerTreasure() {
     intRet = this->buffer.AppendToBuffer(data, dataLen);
     if (intRet == Data::APPEND_IMPOSSIBLE) {
       this->buffer.FlushBuffer();
+      this->buffer.AppendToBuffer(data, dataLen);
     }
     this->netHandler.SendResponse(CustomProtocol::ACK);
   }
