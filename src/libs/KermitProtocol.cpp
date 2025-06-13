@@ -137,11 +137,11 @@ void CustomProtocol::PackageHandler::SetInitMarkPkg() {
 // ChecksumResolver
 //===================================================================
 unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
-  unsigned short sum;
+  unsigned short sum = 0;
   unsigned char *rawPkg = (unsigned char*)(this->currentPkg);
   size_t totalPkgSize = GetPkgSize(this->currentPkg);
 
-  for (size_t it = 0, sum = 0; it < totalPkgSize; it++) {
+  for (size_t it = 0; it < totalPkgSize; it++) {
     sum += rawPkg[it];
     sum += sum >> 8;
     sum &= 0xff;
