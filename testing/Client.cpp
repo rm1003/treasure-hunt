@@ -43,7 +43,7 @@ int main() {
         buffer.CloseFile();
         break;
       default:
-        DEBUG_PRINT("Not expected [%d]. Exiting\n", msgRet);
+        ERROR_PRINT("Not expected [%d]. Exiting\n", msgRet);
         exit(1);
     }
 

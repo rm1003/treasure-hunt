@@ -30,7 +30,7 @@ int main() {
     netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
     resp = netHandler.RecvResponse(NULL, NULL);
     if (resp != CustomProtocol::ACK) {
-      DEBUG_PRINT("Got [%d]. Exiting.\n\n", resp);
+      ERROR_PRINT("Got [%d]. Exiting.\n", resp);
       exit(1);
     }
   }
