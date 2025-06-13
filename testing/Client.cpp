@@ -20,7 +20,7 @@ int main() {
   Data::Buffer buffer;
   CustomProtocol::NetworkHandler netHandler;
   CustomProtocol::MsgType msgRet;
-  
+
   size_t dataLen;
   int intRet;
   unsigned char data[CustomProtocol::DATA_SIZE];
@@ -28,6 +28,7 @@ int main() {
   buffer.OpenFileForWrite(INPUT_FILE);
   while (1) {
     msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
+    DEBUG_PRINT("Got [%lu] bytes\n", dataLen);
 
     switch (msgRet) {
       case CustomProtocol::DATA:

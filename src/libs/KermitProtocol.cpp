@@ -34,9 +34,7 @@ CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   this->currentPkgIdx = 0;
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
   this->SetInitMarkPkg();
-  /* set lastUsedIdx to 1 to avoid REPETED_MSG in first call to RecvPackage */
-  this->lastUsedIdx = 1;
-  this->lastRecvIdx = 0;
+  this->lastRecvIdx = this->lastUsedIdx = 0;
   memset(this->rawBytes, 0, sizeof(this->rawBytes));
 }
 
@@ -55,14 +53,13 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
     exit(1);
   }
   this->currentPkg->type = type;
-  this->currentPkg->idx = this->lastUsedIdx;
+  this->currentPkg->idx = NEXT_IDX(this->lastUsedIdx);
   this->currentPkg->size = len;
-  if (data != NULL) {
+  if (data != NULL)
     memcpy(this->currentPkg->data, data, len);
-  }
+
   this->currentPkg->checkSum = this->ChecksumResolver();
-  DEBUG_PRINT("Resolver [%u]\n", this->currentPkg->checkSum);
-  this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
+  this->lastUsedIdx = this->currentPkg->idx;
 
   return 0;
 }
@@ -73,7 +70,6 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
 int CustomProtocol::PackageHandler::SendCurrentPkg() {
   int ret;
   ret = this->SendPackage(this->currentPkg);
-  DEBUG_PRINT("Sent [%u] bytes\n", this->currentPkg->size);
   this->SwapPkg();
   return ret;
 }
@@ -142,22 +138,17 @@ void CustomProtocol::PackageHandler::SetInitMarkPkg() {
 // ChecksumResolver
 //===================================================================
 unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
-  unsigned long sum;
-  size_t it = 0;
-  const size_t checksumTotalBits = sizeof(KermitPackage::checkSum) * 8;
+  unsigned short sum;
+  unsigned char *rawPkg = (unsigned char*)(this->currentPkg);
+  size_t totalPkgSize = GetPkgSize(this->currentPkg);
 
-  sum = this->currentPkg->size;
-  sum += this->currentPkg->idx;
-  sum += (sum >> checksumTotalBits);
-  sum += this->currentPkg->type;
-  sum += (sum >> checksumTotalBits);
-  /* This loop only works since checkSum field has 1 byte in size */
-  while(it < this->currentPkg->size) {
-    sum += this->currentPkg->data[it];
-    sum += (sum >> checksumTotalBits);
-    it++;
-    DEBUG_PRINT("[%u]\n", this->currentPkg->data[it]);
+  for (size_t it = 0, sum = 0; it < totalPkgSize; it++) {
+    sum += rawPkg[it];
+    sum += sum >> 8;
+    sum &= 0xff;
   }
+
+  DEBUG_PRINT("Final sum [%u]\n", sum);
 
   return (unsigned char)sum;
 }
@@ -173,11 +164,9 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   for (; pkgIt < sizeof(KermitPackage); rawBytesIt++, pkgIt++) {
     this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
-      rawBytesIt++;
-      this->rawBytes[rawBytesIt] = 0xff;
+      this->rawBytes[++rawBytesIt] = 0xff;
     }
   }
-  // DEBUG_PRINT("[%lu]\n", pkgBytes[]);
 }
 
 //===================================================================
@@ -227,7 +216,6 @@ int CustomProtocol::PackageHandler::SendPackage(struct KermitPackage *pkg) {
   this->Append0xff(pkg);
   return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
 }
-
 
 
 //=================================================================//

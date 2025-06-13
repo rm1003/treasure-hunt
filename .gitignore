@@ -1,6 +1,7 @@
 clientT
 serverT
 # testing/
+objects/
 bin/
 build/
 *.vscode
