@@ -138,7 +138,6 @@ void CustomProtocol::PackageHandler::SetInitMarkPkg() {
 //===================================================================
 unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
   unsigned short sum = 0;
-  unsigned char *rawPkg = (unsigned char*)(this->currentPkg);
 
   sum += this->currentPkg->size;
   sum += this->currentPkg->idx;
@@ -149,7 +148,7 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     sum &= 0xff;
   }
 
-  DEBUG_PRINT("Final sum [%u] total size [%lu]\n", sum, totalPkgSize);
+  DEBUG_PRINT("Final sum [%u]\n", sum);
 
   return (unsigned char)sum;
 }
