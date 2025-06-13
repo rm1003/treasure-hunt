@@ -92,8 +92,8 @@ int CustomProtocol::PackageHandler::RecvPackage() {
     if (ret == -1) {
       continue;
     }
-    this->Remove0xff(this->currentPkg);
     if (this->IsMsgKermitPackage()) {
+      this->Remove0xff(this->currentPkg);
       if (!this->VerifyChecksum()) {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
@@ -148,8 +148,6 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     sum &= 0xff;
   }
 
-  DEBUG_PRINT("Final sum [%u]\n", sum);
-
   return (unsigned char)sum;
 }
 
@@ -179,7 +177,7 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
 
-  for (; rawBytesIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
+  for (; pkgIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
     pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
       rawBytesIt++;
@@ -200,7 +198,7 @@ bool CustomProtocol::PackageHandler::VerifyChecksum() {
 // IsMsgKermitPackage
 //===================================================================
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
-  return (currentPkg->initMark == INIT_MARK);
+  return (((KermitPackage*)rawBytes)->initMark == INIT_MARK);
 }
 
 //===================================================================
@@ -294,7 +292,6 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr,
   while (1) {
     feedBack = this->pkgHandler->RecvPackage();
     if (feedBack == TIMEOUT_REACHED || feedBack == INVALID_NEW_MSG) {
-      DEBUG_PRINT("Sending previous pkg in [SendGenericData]\n");
       this->pkgHandler->SendPreviousPkg();
     } else {
       this->isFirstRecv = false;
