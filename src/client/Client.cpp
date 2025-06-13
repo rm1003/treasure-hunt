@@ -123,23 +123,7 @@ void TreasureHunt::Client::GetServerTreasure() {
 
   this->buffer.OpenFileForWrite(filePath);
   do {
-    msgRet = this->netHandler.RecvGenericData((void*)data, &dataLen);
-    if (msgRet == CustomProtocol::END_OF_FILE) {
-      this->buffer.FlushBuffer();
-      this->buffer.CloseFile();
-      if (numberOfFoundTreasures == TOTAL_TREASURES) {
 
-      }
-    } else if (msgRet == CustomProtocol::DATA) {
-      intRet = this->buffer.AppendToBuffer(data, dataLen);
-      if (intRet == Data::APPEND_IMPOSSIBLE)
-        this->buffer.FlushBuffer();
-    } else {
-      PrintErrorMsgType(msgRet, "GetServerTreasure");
-      exit(1);
-    }
-
-    this->netHandler.SendResponse(CustomProtocol::ACK);
   } while(msgRet != CustomProtocol::END_OF_FILE);
 
   this->netHandler.InvertToSender();

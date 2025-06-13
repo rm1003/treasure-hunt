@@ -1,64 +1,58 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
 #include "../src/libs/KermitProtocol.hpp"
+#include "../src/libs/Buffer.hpp"
 #include "../src/libs/Logging.hpp"
 #include <cassert>
+#include <cstddef>
 #include <cstdio>
 #include <string>
-#include <cstring>
+#include <cstdlib>
 
-using CustomProtocol::MsgType;
+const std::string MP4_PLAYER  = "vlc";
+const std::string MP4_OPTIONS = "--play-and-exit";
+const std::string JPG_PLAYER  = "eog";
+const std::string TXT_PLAYER  = "xed";
 
-const std::string MP4_PLAYER  = "vlc ";
-const std::string MP4_OPTIONS = "--play-and-exit ";
-const std::string JPG_PLAYER  = "eog ";
-const std::string TXT_PLAYER  = "xed ";
+char INPUT_FILE[] = "video.mp4";
 
-const char *GetEthIntName() {
-  struct if_nameindex *ifArr, *ifIt;
-  const char *ptr;
-
-  ifArr = if_nameindex();
-  if (!ifArr) {
-    ERROR_PRINT("Could not get eth interface name arr\n");
-    exit(1);
-  }
-
-  for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
-    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
-      ptr = strdup(ifIt->if_name);
-      if_freenameindex(ifArr);
-      return ptr;
-    }
-  }
-
-  if_freenameindex(ifArr);
-
-  return NULL;
-}
-
-#include <filesystem>
-#include <iostream>
-namespace fs = std::filesystem;
-
-int main(int argc, char *argv[]) {
-  /* Test InvertToReceiver
+int main() {
+  Data::Buffer buffer;
   CustomProtocol::NetworkHandler netHandler;
-  char str[] = "Ola mundo!";
-  char recv[10];
-  netHandler.SendGenericData(CustomProtocol::DATA, str, sizeof(str));
-  MsgType m = netHandler.RecvResponse(NULL, NULL);
-  assert(m == CustomProtocol::ACK);
-  netHandler.InvertToReceiver();
-  netHandler.RecvGenericData(recv, NULL);
-  puts(recv);
-  netHandler.SendResponse(CustomProtocol::ACK);
-  */
-  /* Test system */
-  std::string execPath = fs::absolute(argv[0]).parent_path().string();
-  std::string txt = execPath + "/" + "../../objects/3.jpg";
+  CustomProtocol::MsgType msgRet;
 
-  std::string command;
-  command = JPG_PLAYER + txt;
+  size_t dataLen;
+  int intRet;
+  unsigned char data[CustomProtocol::DATA_SIZE];
+
+  buffer.OpenFileForWrite(INPUT_FILE);
+  while (1) {
+    msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
+    DEBUG_PRINT("Got [%lu] bytes\n", dataLen);
+
+    switch (msgRet) {
+      case CustomProtocol::DATA:
+        netHandler.SendResponse(CustomProtocol::ACK);
+        intRet = buffer.AppendToBuffer(data, dataLen);
+        if (intRet == Data::APPEND_IMPOSSIBLE) {
+          buffer.FlushBuffer();
+          buffer.AppendToBuffer(data, dataLen);
+        }
+        break;
+      case CustomProtocol::END_OF_FILE:
+        buffer.FlushBuffer();
+        buffer.CloseFile();
+        break;
+      default:
+        ERROR_PRINT("Not expected [%d]. Exiting\n", msgRet);
+        exit(1);
+    }
+
+    if (msgRet == CustomProtocol::END_OF_FILE)
+      break;
+  }
+
+  buffer.CloseFile();
+  std::string command = MP4_PLAYER + INPUT_FILE + MP4_OPTIONS;
   std::system(command.c_str());
 }

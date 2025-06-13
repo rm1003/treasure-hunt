@@ -58,7 +58,7 @@ int CustomSocket::RawSocket::CreateSocket(const char *nome_interface_rede) {
   mr.mr_ifindex = ifindex;
   mr.mr_type = PACKET_MR_PROMISC;
   // Não joga fora o que identifica como lixo: Modo promíscuo
-  ret = setsockopt(this->socketFd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, 
+  ret = setsockopt(this->socketFd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr,
                   sizeof(mr));
   if (ret == -1) {
     fprintf(stderr, "Erro ao fazer setsockopt: "
@@ -72,6 +72,6 @@ int CustomSocket::RawSocket::CreateSocket(const char *nome_interface_rede) {
 void CustomSocket::RawSocket::SetRecvTimeout() {
   struct timeval timeout;
   timeout = {.tv_sec = TIMEOUT_LEN/1000, .tv_usec = (TIMEOUT_LEN%1000)*1000};
-  setsockopt(this->socketFd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, 
+  setsockopt(this->socketFd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout,
             sizeof(timeout));
 }

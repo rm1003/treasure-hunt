@@ -1,47 +1,38 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
 #include "../src/libs/KermitProtocol.hpp"
+#include "../src/libs/Buffer.hpp"
 #include "../src/libs/Logging.hpp"
-#include <cassert>
-#include <cstdio>
+#include <cstddef>
 
-#include <cstring>
-#include <unistd.h>
-
-using CustomProtocol::MsgType;
-
-const char *GetEthIntName() {
-  struct if_nameindex *ifArr, *ifIt;
-  const char *ptr;
-
-  ifArr = if_nameindex();
-  if (!ifArr) {
-    ERROR_PRINT("Could not get eth interface name arr\n");
-    exit(1);
-  }
-
-  for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
-    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
-      ptr = strdup(ifIt->if_name);
-      if_freenameindex(ifArr);
-      return ptr;
-    }
-  }
-
-  if_freenameindex(ifArr);
-
-  return NULL;
-}
+char INPUT_FILE[] = "cat.mp4";
 
 int main() {
+  Data::Buffer buffer;
   CustomProtocol::NetworkHandler netHandler;
-  char str[10];
-  char send[] = "Oioi";
-  netHandler.RecvGenericData(str, NULL);
-  puts(str);
-  netHandler.SendResponse(CustomProtocol::ACK);
-  netHandler.InvertToSender();
-  netHandler.SendGenericData(CustomProtocol::ACK, send, sizeof(send));
-  MsgType m = netHandler.RecvResponse(NULL, NULL);
-  assert(m == CustomProtocol::ACK);
+  void *ptr;
+  size_t actualSize;
+  size_t bytesRetrived;
+  CustomProtocol::MsgType resp;
+
+  buffer.OpenFileForRead(INPUT_FILE);
+  while(1) {
+    ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    if (ptr == NULL) {
+      bytesRetrived = buffer.RetrieveBuffer();
+      if (bytesRetrived == 0) {
+        netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
+        break;
+      }
+      ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    }
+
+    netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
+    resp = netHandler.RecvResponse(NULL, NULL);
+    if (resp != CustomProtocol::ACK) {
+      ERROR_PRINT("Got [%d]. Exiting.\n", resp);
+      exit(1);
+    }
+  }
+  buffer.CloseFile();
 }
