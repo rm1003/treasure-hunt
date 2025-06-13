@@ -61,6 +61,7 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
     memcpy(this->currentPkg->data, data, len);
   }
   this->currentPkg->checkSum = this->ChecksumResolver();
+  DEBUG_PRINT("Resolver [%u]\n", this->currentPkg->checkSum);
   this->lastUsedIdx = NEXT_IDX(this->lastUsedIdx);
 
   return 0;
@@ -155,6 +156,7 @@ unsigned char CustomProtocol::PackageHandler::ChecksumResolver() {
     sum += this->currentPkg->data[it];
     sum += (sum >> checksumTotalBits);
     it++;
+    DEBUG_PRINT("[%u]\n", this->currentPkg->data[it]);
   }
 
   return (unsigned char)sum;
@@ -167,17 +169,15 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned char *pkgBytes = (unsigned char *)(pkg);
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
-  unsigned long pkgSize = this->GetPkgSize(pkg);
 
-  for (; pkgIt < pkgSize; rawBytesIt++, pkgIt++) {
+  for (; pkgIt < sizeof(KermitPackage); rawBytesIt++, pkgIt++) {
     this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
-      this->rawBytes[++rawBytesIt] = 0xff;
+      rawBytesIt++;
+      this->rawBytes[rawBytesIt] = 0xff;
     }
   }
-
-  // DEBUG_PRINT("Final rawBytesArr it value [%lu]\n", rawBytesIt);
-  // DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
+  // DEBUG_PRINT("[%lu]\n", pkgBytes[]);
 }
 
 //===================================================================
@@ -194,9 +194,6 @@ void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
       rawBytesIt++;
     }
   }
-
-  // DEBUG_PRINT("Final rawBytesArr it value [%lu]\n", rawBytesIt);
-  // DEBUG_PRINT("Final pkg it value [%lu]\n", pkgIt);
 }
 
 //===================================================================
