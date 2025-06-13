@@ -10,7 +10,7 @@
 
 namespace CustomProtocol {
 
-const unsigned long DATA_SIZE = 128;
+const unsigned long DATA_SIZE = 0x7f;
 const unsigned char INIT_MARK = 0x7e;
 const unsigned long DATA_BUFFER_SIZE = 1 << 20;
 const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
@@ -96,7 +96,7 @@ class PackageHandler {
     /* Initialize current package with type (message type), data (pointer
      * to data) and number of data bytes (<= 128). If there is no data to be
      * sent fill data with NULL and len with 0 */
-    int InitPackage(unsigned char type, void *data, size_t len);
+    int InitPackage(unsigned char type, void *data, unsigned short len);
     /* Send package pointed by currentPkg */
     int SendCurrentPkg();
     /* Send package pointed by prevPkg */
