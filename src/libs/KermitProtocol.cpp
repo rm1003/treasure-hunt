@@ -35,7 +35,6 @@ CustomProtocol::PackageHandler::PackageHandler(const char *netIntName) {
   this->currentPkg = &this->pkgs[this->currentPkgIdx];
   this->SetInitMarkPkg();
   this->lastRecvIdx = this->lastUsedIdx = 0;
-  memset(this->rawBytes, 0, sizeof(this->rawBytes));
 }
 
 CustomProtocol::PackageHandler::~PackageHandler() {
@@ -161,6 +160,8 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
 
+  memset(this->rawBytes, 0, sizeof(this->rawBytes));
+
   for (; pkgIt < sizeof(KermitPackage); rawBytesIt++, pkgIt++) {
     this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
@@ -173,13 +174,13 @@ void CustomProtocol::PackageHandler::Append0xff(struct KermitPackage *pkg) {
 // Remove0xff
 //===================================================================
 void CustomProtocol::PackageHandler::Remove0xff(struct KermitPackage *pkg) {
+  unsigned char *pkgBytes = (unsigned char *)(pkg);
   unsigned long rawBytesIt = 0;
   unsigned long pkgIt = 0;
-  unsigned char *pkgBytes = (unsigned char *)(pkg);
 
   for (; rawBytesIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
     pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
-    if (pkgBytes[pkgIt] == 0x81 || pkgBytes[pkgIt] == 0x88) {
+    if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
       rawBytesIt++;
     }
   }
