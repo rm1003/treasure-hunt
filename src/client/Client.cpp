@@ -91,7 +91,6 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
 void TreasureHunt::Client::GetServerTreasure() {
   MsgType msgRet;
   fs::space_info spaceInfo;
-  int intRet;
   size_t fileSize;
   size_t availableSize;
   size_t dataLen;
