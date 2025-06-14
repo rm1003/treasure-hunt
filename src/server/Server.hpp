@@ -7,7 +7,7 @@ namespace TreasureHunt {
     private:
       CustomProtocol::NetworkHandler netHandler;
       Position *positionsList; // Maybe not necessary IDK
-      bool foundTreasures[NUM_TREASURES];
+      bool foundTreasures[TOTAL_TREASURES];
 
     public:
       Server();

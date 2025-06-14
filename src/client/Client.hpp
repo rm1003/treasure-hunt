@@ -20,9 +20,10 @@ class Client {
   private:
     CustomProtocol::NetworkHandler netHandler;
     Data::Buffer buffer;
-    char filePath[256];
     FileType treasureType;
     Position currentPosition;
+    unsigned char data[CustomProtocol::DATA_SIZE];
+    char filePath[256];
     int numberOfFoundTreasures;
     bool hasTreasure[GRID_SIZE][GRID_SIZE];
     bool wasReached[GRID_SIZE][GRID_SIZE];

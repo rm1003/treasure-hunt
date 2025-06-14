@@ -21,7 +21,7 @@ unsigned long timestamp() {
   return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 }
 
-void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
+static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
   ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
 }
 

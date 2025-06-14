@@ -28,7 +28,6 @@ int main() {
   buffer.OpenFileForWrite(INPUT_FILE);
   while (1) {
     msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
-    DEBUG_PRINT("Got [%lu] bytes\n", dataLen);
 
     switch (msgRet) {
       case CustomProtocol::DATA:
