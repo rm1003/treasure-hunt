@@ -12,9 +12,12 @@ const int VALID_MOVE = 2;
 const int INVALID_MOVE = 3;
 const char SPACE[] = "   ";
 const int NUMBER_OF_NEW_LINES = 80;
+
 const std::string MP4_PLAYER  = "vlc ";
 const std::string JPG_PLAYER  = "eog ";
 const std::string TXT_PLAYER  = "xed ";
+const std::string USER        = "fbc04 ";
+const std::string SUDO_OPT    = "sudo -u " + USER;
 
 class Client {
   private:

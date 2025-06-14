@@ -146,13 +146,13 @@ int TreasureHunt::Client::ShowTreasure() {
 
   switch (this->treasureType) {
     case MP4:
-      command = MP4_PLAYER + this->filePath;
+      command = SUDO_OPT + MP4_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case JPG:
-      command = JPG_PLAYER + this->filePath;
+      command = SUDO_OPT + JPG_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case TXT:
-      command = TXT_PLAYER + this->filePath;
+      command = SUDO_OPT + TXT_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");
