@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
   client.PrintEmptySpace();
   client.PrintGrid();
-  while (1) {
+  do {
     do {
       key = getchar();
     } while (IsNotMovementKey(key));
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
       client.GetServerTreasure();
       client.ShowTreasure();
     }
-  }
+  } while (!client.GameEnded());
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);
 

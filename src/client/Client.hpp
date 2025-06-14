@@ -44,6 +44,8 @@ class Client {
     void GetServerTreasure();
     /* */
     int ShowTreasure();
+    /*  */
+    bool GameEnded();
 };
 
 } // namespace TreasureHunt

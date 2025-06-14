@@ -181,3 +181,7 @@ void TreasureHunt::Client::Move(MsgType mov) {
   }
   this->wasReached[this->currentPosition.x][this->currentPosition.y] = true;
 }
+
+bool TreasureHunt::Client::GameEnded() {
+  return (this->numberOfFoundTreasures == TOTAL_TREASURES);
+}
