@@ -66,10 +66,10 @@ int CustomProtocol::PackageHandler::InitPackage(unsigned char type,
 //===================================================================
 // SendCurrentPkg
 //===================================================================
-int CustomProtocol::PackageHandler::SendCurrentPkg() {
+int CustomProtocol::PackageHandler::SendCurrentPkg(bool swapEnable) {
   int ret;
   ret = this->SendPackage(this->currentPkg);
-  this->SwapPkg();
+  if (swapEnable) this->SwapPkg();
   return ret;
 }
 
@@ -287,16 +287,15 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr,
   int feedBack;
 
   this->pkgHandler->InitPackage(msg, ptr, len);
-  this->pkgHandler->SendCurrentPkg();
+  this->pkgHandler->SendCurrentPkg(true);
 
   while (1) {
     feedBack = this->pkgHandler->RecvPackage();
-    if (feedBack == TIMEOUT_REACHED || feedBack == INVALID_NEW_MSG) {
-      this->pkgHandler->SendPreviousPkg();
-    } else {
-      this->isFirstRecv = false;
-      return;
+    if (feedBack == VALID_NEW_MSG) {
+      if (this->pkgHandler->GetCurrentPkg()->type != NACK)
+        return;
     }
+    this->pkgHandler->SendPreviousPkg();
   }
 }
 
@@ -309,20 +308,20 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
   int feedBack;
 
   if (this->isFirstRecv) {
-    while (1) {
+    do {
       feedBack = this->pkgHandler->RecvPackage();
-      if (feedBack == VALID_NEW_MSG) {
-        retPkg = this->pkgHandler->GetCurrentPkg();
-        this->TransferData(retPkg, ptr, len);
-        this->isFirstRecv = false;
-        return (MsgType)retPkg->type;
+      if (feedBack == INVALID_NEW_MSG) {
+        this->pkgHandler->InitPackage(NACK, NULL, 0);
+        this->pkgHandler->SendCurrentPkg(false);
       }
-    }
-  } else {
-    retPkg = this->pkgHandler->GetCurrentPkg();
-    this->TransferData(retPkg, ptr, len);
-    return (MsgType)retPkg->type;
+    } while (feedBack != VALID_NEW_MSG);
   }
+
+  retPkg = this->pkgHandler->GetCurrentPkg();
+  this->TransferData(retPkg, ptr, len);
+  this->isFirstRecv = false;
+
+  return (MsgType)retPkg->type;
 }
 
 //===================================================================
@@ -332,15 +331,18 @@ void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
   int feedBack;
 
   this->pkgHandler->InitPackage(msg, NULL, 0);
-  this->pkgHandler->SendCurrentPkg();
-  while (1) {
+  this->pkgHandler->SendCurrentPkg(true);
+  do {
     feedBack = this->pkgHandler->RecvPackage();
-    if (feedBack == REPEATED_MSG) {
-      this->pkgHandler->SendPreviousPkg();
-    } else if (feedBack == VALID_NEW_MSG){
-      return;
+    switch (feedBack) {
+      case REPEATED_MSG:
+        this->pkgHandler->SendPreviousPkg();
+        break;
+      case INVALID_NEW_MSG:
+        this->pkgHandler->InitPackage(NACK, NULL, 0);
+        this->pkgHandler->SendCurrentPkg(false);
     }
-  }
+  } while (feedBack != VALID_NEW_MSG);
 }
 
 //===================================================================

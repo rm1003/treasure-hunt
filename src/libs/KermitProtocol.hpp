@@ -98,7 +98,7 @@ class PackageHandler {
      * sent fill data with NULL and len with 0 */
     int InitPackage(unsigned char type, void *data, unsigned short len);
     /* Send package pointed by currentPkg */
-    int SendCurrentPkg();
+    int SendCurrentPkg(bool swapEnable);
     /* Send package pointed by prevPkg */
     int SendPreviousPkg();
     /* Receive package in currentPkg. This method implements timeout. It may

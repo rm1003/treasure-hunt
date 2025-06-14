@@ -9,10 +9,9 @@
 #include <string>
 #include <cstdlib>
 
-const std::string MP4_PLAYER  = "vlc";
-const std::string MP4_OPTIONS = "--play-and-exit";
-const std::string JPG_PLAYER  = "eog";
-const std::string TXT_PLAYER  = "xed";
+const std::string MP4_PLAYER  = "vlc ";
+const std::string JPG_PLAYER  = "eog ";
+const std::string TXT_PLAYER  = "xed ";
 
 char INPUT_FILE[] = "video.mp4";
 
@@ -22,19 +21,16 @@ int main() {
   CustomProtocol::MsgType msgRet;
 
   size_t dataLen;
-  int intRet;
   unsigned char data[CustomProtocol::DATA_SIZE];
 
   buffer.OpenFileForWrite(INPUT_FILE);
-  while (1) {
+  do {
     msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
-    DEBUG_PRINT("Got [%lu] bytes\n", dataLen);
 
     switch (msgRet) {
       case CustomProtocol::DATA:
         netHandler.SendResponse(CustomProtocol::ACK);
-        intRet = buffer.AppendToBuffer(data, dataLen);
-        if (intRet == Data::APPEND_IMPOSSIBLE) {
+        if (buffer.AppendToBuffer(data, dataLen)) {
           buffer.FlushBuffer();
           buffer.AppendToBuffer(data, dataLen);
         }
@@ -47,12 +43,8 @@ int main() {
         ERROR_PRINT("Not expected [%d]. Exiting\n", msgRet);
         exit(1);
     }
+  } while (msgRet != CustomProtocol::END_OF_FILE);
 
-    if (msgRet == CustomProtocol::END_OF_FILE)
-      break;
-  }
-
-  buffer.CloseFile();
-  std::string command = MP4_PLAYER + INPUT_FILE + MP4_OPTIONS;
+  std::string command = MP4_PLAYER + INPUT_FILE;
   std::system(command.c_str());
 }
