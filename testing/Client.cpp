@@ -22,7 +22,6 @@ int main() {
   CustomProtocol::MsgType msgRet;
 
   size_t dataLen;
-  int intRet;
   unsigned char data[CustomProtocol::DATA_SIZE];
 
   buffer.OpenFileForWrite(INPUT_FILE);
@@ -32,8 +31,7 @@ int main() {
     switch (msgRet) {
       case CustomProtocol::DATA:
         netHandler.SendResponse(CustomProtocol::ACK);
-        intRet = buffer.AppendToBuffer(data, dataLen);
-        if (intRet == Data::APPEND_IMPOSSIBLE) {
+        if (buffer.AppendToBuffer(data, dataLen)) {
           buffer.FlushBuffer();
           buffer.AppendToBuffer(data, dataLen);
         }
