@@ -5,7 +5,7 @@
 #include "../src/libs/Logging.hpp"
 #include <cstddef>
 
-char INPUT_FILE[] = "./objects/2.mp4";
+char INPUT_FILE[] = "./objetos/2.mp4";
 
 int main() {
   Data::Buffer buffer;

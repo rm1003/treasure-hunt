@@ -59,6 +59,7 @@ void CustomProtocol::PackageHandler::InitSendPackage(unsigned short type, void *
   /* sequence number */
   this->sendPkg.idx = NEXT_IDX(this->lastUsedIdx);
   this->lastUsedIdx = this->sendPkg.idx;
+  DEBUG_PRINT("sendPkg.idx [%d]\n", this->sendPkg.idx);
   /* checksum */
   this->sendPkg.checkSum = this->ChecksumResolver(SEND_PKG);
   /* 0xff */
