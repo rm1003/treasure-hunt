@@ -75,7 +75,7 @@ int CustomProtocol::PackageHandler::SendPackage() {
 //===================================================================
 // RecvPackage
 //===================================================================
-int CustomProtocol::PackageHandler::RecvPackage() {
+int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
   int ret;
   unsigned long init = timestamp();
 
@@ -90,13 +90,15 @@ int CustomProtocol::PackageHandler::RecvPackage() {
         DEBUG_PRINT("Invalid new message arrived.\n");
         return INVALID_NEW_MSG;
       }
-      if (this->recvPkg.idx == this->lastRecvIdx) {
-        DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n");
-        return REPEATED_MSG;
-      }
-      if (this->recvPkg.idx != this->lastRecvIdx + 1) {
-        ERROR_PRINT("Invalid sequence number. Exiting.\n");
-        exit(1);
+      if (!ignoreSequence) {
+        if (this->recvPkg.idx == this->lastRecvIdx) {
+          DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n");
+          return REPEATED_MSG;
+        }
+        if (this->recvPkg.idx != this->lastRecvIdx + 1) {
+          ERROR_PRINT("Invalid sequence number [%d]. Exiting.\n", this->recvPkg.idx);
+          exit(1);
+        }
       }
       this->lastRecvIdx = this->recvPkg.idx;
       return VALID_NEW_MSG;
@@ -265,12 +267,12 @@ void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
 void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
   this->pkgHandler->InitSendPackage(msg, ptr, len);
   this->pkgHandler->SendPackage();
-  int feedBack = this->pkgHandler->RecvPackage();
+  int feedBack = this->pkgHandler->RecvPackage(true);
   unsigned short type = this->pkgHandler->GetRecvPkg()->type;
 
   while (feedBack != VALID_NEW_MSG || type == NACK) {
     this->pkgHandler->SendPackage();
-    feedBack = this->pkgHandler->RecvPackage();
+    feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
   }
 }
@@ -287,7 +289,7 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
     /* create NACK pkg in case it is needed */
     this->pkgHandler->InitSendPackage(NACK, NULL, 0);
     do {
-      feedBack = this->pkgHandler->RecvPackage();
+      feedBack = this->pkgHandler->RecvPackage(false);
       if (feedBack == INVALID_NEW_MSG)
         this->pkgHandler->SendPackage();
     } while (feedBack != VALID_NEW_MSG);
@@ -309,7 +311,7 @@ void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
   this->pkgHandler->InitSendPackage(msg, NULL, 0);
   this->pkgHandler->SendPackage();
   do {
-    feedBack = this->pkgHandler->RecvPackage();
+    feedBack = this->pkgHandler->RecvPackage(false);
     switch (feedBack) {
       case REPEATED_MSG:
         this->pkgHandler->SendPackage();

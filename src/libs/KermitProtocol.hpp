@@ -90,7 +90,7 @@ class PackageHandler {
     int SendPackage();
     /* Receive package in currentPkg. This method implements timeout. It may
      * return REPEATED_MSG, TIMEOUT_REACHED, VALID_NEW_MSG or INVALID_NEW_MSG. */
-    int RecvPackage();
+    int RecvPackage(bool ignoreSequence);
     /* It returns const pointer to last received/initiated package */
     const struct KermitPackage *GetRecvPkg();
 };
