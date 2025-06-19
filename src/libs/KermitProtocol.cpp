@@ -95,7 +95,7 @@ int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
           DEBUG_PRINT("Repeated message. Maybe sender did not get ACK.\n");
           return REPEATED_MSG;
         }
-        if (this->recvPkg.idx != this->lastRecvIdx + 1) {
+        if (this->recvPkg.idx != (NEXT_IDX(this->lastRecvIdx))) {
           ERROR_PRINT("Invalid sequence number [%d]. Exiting.\n", this->recvPkg.idx);
           exit(1);
         }
