@@ -10,6 +10,7 @@ extern "C" {
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <unistd.h>
 }
 
 using CustomProtocol::KermitPackage;
@@ -21,7 +22,7 @@ unsigned long timestamp() {
   return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 }
 
-void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
+static inline void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
   ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
 }
 
@@ -250,7 +251,7 @@ const char *CustomProtocol::NetworkHandler::GetEthIntName() {
 
 
 //===================================================================
-// Recv
+// TransferData
 //===================================================================
 void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
                                           void *ptr, size_t *len) {
@@ -260,6 +261,29 @@ void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
     if (!len) return;
     *len = retPkg->size;
   }
+}
+
+//===================================================================
+// WaitForResponse
+//===================================================================
+int CustomProtocol::NetworkHandler::WaitForEndResponse(MsgType type,
+                                                    unsigned long timeout_ms) {
+  unsigned long start = timestamp();
+  while (timestamp() - start < timeout_ms) {
+    int status = this->pkgHandler->RecvPackage(false);
+    
+    if (status == VALID_NEW_MSG && 
+      this->pkgHandler->GetRecvPkg()->type == type) {
+      return VALID_NEW_MSG;
+    }
+    
+    if (status == INVALID_NEW_MSG) {
+      this->pkgHandler->InitSendPackage(NACK, NULL, 0);
+      this->pkgHandler->SendPackage();
+    }
+  }
+  
+  return TIMEOUT_REACHED;
 }
 
 //===================================================================
@@ -354,4 +378,61 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
   this->SendGenericData(INVERT, NULL, 0);
+}
+
+//===================================================================
+// ServerEndGame
+//===================================================================
+void CustomProtocol::NetworkHandler::ServerEndGame() {
+  int retries = 0;
+  bool clientAcked = false;
+  unsigned long start;
+
+  while (retries < ENDGAME_RETRIES && !clientAcked) {
+    this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
+    this->pkgHandler->SendPackage();
+
+    if (this->WaitForEndResponse(ACK, TIMEOUT_LEN) == VALID_NEW_MSG) {
+      clientAcked = true;
+      break;
+    }
+    
+    retries++;
+    DEBUG_PRINT("Server retry %d/%d\n", retries, ENDGAME_RETRIES);
+  }
+
+  // if client confirm with ACK, waits for STOP_GAME sent from the client
+  if (clientAcked) {
+    if (this->WaitForEndResponse(STOP_GAME, LONG_TIMEOUT) == VALID_NEW_MSG) {
+      // send the finish ACK to client - try 5 times (5 seconds)
+      for (int i = 0; i < ENDGAME_RETRIES; ++i) {
+        this->pkgHandler->InitSendPackage(ACK, NULL, 0);
+        this->pkgHandler->SendPackage();
+        usleep(LONG_TIMEOUT); // 1 second
+      }
+    }
+  }
+}
+
+//===================================================================
+// ClientEndGame
+//===================================================================
+void CustomProtocol::NetworkHandler::ClientEndGame() {
+  if (this->WaitForEndResponse(STOP_GAME, CLIENT_LONG_TIMEOUT) == VALID_NEW_MSG) {
+    // send the finish ACK adn STOP_GAME to server - try 5 times (5 seconds)
+    for (int i = 0; i < ENDGAME_RETRIES; ++i) {
+      this->pkgHandler->InitSendPackage(ACK, NULL, 0);
+      this->pkgHandler->SendPackage();
+      usleep(LONG_TIMEOUT); // 1 second
+    }
+    for (int i = 0; i < ENDGAME_RETRIES; ++i) {
+      this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
+      this->pkgHandler->SendPackage();
+      usleep(LONG_TIMEOUT); // 1 second
+
+      if (this->WaitForEndResponse(ACK, TIMEOUT_LEN) == VALID_NEW_MSG) {
+          return;
+      }
+    }
+  }
 }
