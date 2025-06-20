@@ -366,7 +366,8 @@ void CustomProtocol::NetworkHandler::ServerEndGame() {
   this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
   for (int i = 0; i < ENDGAME_RETRIES; ++i) {
     this->pkgHandler->SendPackage();
-    if (ret = this->pkgHandler->RecvPackage(false) == VALID_NEW_MSG) {
+    ret = this->pkgHandler->RecvPackage(false);
+    if (ret == VALID_NEW_MSG) {
       if (this->pkgHandler->GetRecvPkg()->type == ACK)
         break;
     }
