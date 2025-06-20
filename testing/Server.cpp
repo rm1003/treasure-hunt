@@ -1,52 +1,38 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
 #include "../src/libs/KermitProtocol.hpp"
+#include "../src/libs/Buffer.hpp"
 #include "../src/libs/Logging.hpp"
-#include <cstdio>
+#include <cstddef>
 
-#include <cstring>
-#include <unistd.h>
-
-using CustomProtocol::MsgType;
-
-const char *GetEthIntName() {
-  struct if_nameindex *ifArr, *ifIt;
-  const char *ptr;
-
-  ifArr = if_nameindex();
-  if (!ifArr) {
-    ERROR_PRINT("Could not get eth interface name arr\n");
-    exit(1);
-  }
-
-  for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
-    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
-      ptr = strdup(ifIt->if_name);
-      if_freenameindex(ifArr);
-      return ptr;
-    }
-  }
-
-  if_freenameindex(ifArr);
-
-  return NULL;
-}
+char INPUT_FILE[] = "./objetos/1.txt";
 
 int main() {
-  const char *ethName = GetEthIntName();
-  if (ethName == NULL) {
-    ERROR_PRINT("Could not get interface name. Exiting.\n");
-    exit(1);
-  } else {
-    DEBUG_PRINT("Interface name [%s]\n", ethName);
-  }
-  CustomProtocol::PackageHandler pkgHandler(ethName);
-  char string[] = "Oi meu nome é fernando, essa eh uma mensagem!";
+  Data::Buffer buffer;
+  CustomProtocol::NetworkHandler netHandler;
+  void *ptr;
+  size_t actualSize;
+  size_t bytesRetrived;
+  CustomProtocol::MsgType resp;
+
+  buffer.OpenFileForRead(INPUT_FILE);
   while(1) {
-    pkgHandler.InitPackage(MsgType::DATA, string, sizeof(string));
-    int ret = pkgHandler.SendCurrentPkg();
-    sleep(1);
-    DEBUG_PRINT("SendCurrentPkg ret [%d]\n", ret);
+    ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    if (ptr == NULL) {
+      bytesRetrived = buffer.RetrieveBuffer();
+      if (bytesRetrived == 0) {
+        netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
+        break;
+      }
+      ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    }
+
+    netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
+    resp = netHandler.RecvResponse(NULL, NULL);
+    if (resp != CustomProtocol::ACK) {
+      ERROR_PRINT("Got [%d]. Exiting.\n", resp);
+      exit(1);
+    }
   }
-  free((void*)ethName);
+  buffer.CloseFile();
 }

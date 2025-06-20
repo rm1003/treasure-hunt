@@ -1,9 +1,11 @@
 clientT
 serverT
 # testing/
+# objects/
 bin/
 build/
 *.vscode
+*.mp4
 # Object files
 *.o
 *.ko

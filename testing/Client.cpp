@@ -1,55 +1,50 @@
 /* ARQUIVO PARA TESTE DE RawSocket lib */
 
 #include "../src/libs/KermitProtocol.hpp"
+#include "../src/libs/Buffer.hpp"
 #include "../src/libs/Logging.hpp"
+#include <cassert>
+#include <cstddef>
 #include <cstdio>
+#include <string>
+#include <cstdlib>
 
-#include <cstring>
+const std::string MP4_PLAYER  = "vlc ";
+const std::string JPG_PLAYER  = "eog ";
+const std::string TXT_PLAYER  = "xed ";
 
-using CustomProtocol::MsgType;
-using CustomProtocol::KermitPackage;
-
-const char *GetEthIntName() {
-  struct if_nameindex *ifArr, *ifIt;
-  const char *ptr;
-
-  ifArr = if_nameindex();
-  if (!ifArr) {
-    ERROR_PRINT("Could not get eth interface name arr\n");
-    exit(1);
-  }
-
-  for (ifIt = &ifArr[0]; ifIt->if_name != NULL; ifIt++) {
-    if (strstr(ifIt->if_name, "eth") || strstr(ifIt->if_name, "enp")) {
-      ptr = strdup(ifIt->if_name);
-      if_freenameindex(ifArr);
-      return ptr;
-    }
-  }
-
-  if_freenameindex(ifArr);
-
-  return NULL;
-}
+char INPUT_FILE[] = "video.txt";
 
 int main() {
-  const char *ethName = GetEthIntName();
-  if (ethName == NULL) {
-    ERROR_PRINT("Could not get interface name. Exiting.\n");
-    exit(1);
-  } else {
-    DEBUG_PRINT("Interface name [%s]\n", ethName);
-  }
-  CustomProtocol::PackageHandler pkgHandler(ethName);
+  Data::Buffer buffer;
+  CustomProtocol::NetworkHandler netHandler;
+  CustomProtocol::MsgType msgRet;
 
-  while(1) {
-    int ret = pkgHandler.RecvPackage();
-    DEBUG_PRINT("RecvPackage ret [%d]\n", ret);
-    if (ret == CustomProtocol::TIMEOUT_REACHED) {
-      continue;
+  size_t dataLen;
+  unsigned char data[CustomProtocol::DATA_SIZE];
+
+  buffer.OpenFileForWrite(INPUT_FILE);
+  do {
+    msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
+
+    switch (msgRet) {
+      case CustomProtocol::DATA:
+        netHandler.SendResponse(CustomProtocol::ACK);
+        if (buffer.AppendToBuffer(data, dataLen)) {
+          buffer.FlushBuffer();
+          buffer.AppendToBuffer(data, dataLen);
+        }
+        break;
+      case CustomProtocol::END_OF_FILE:
+        buffer.FlushBuffer();
+        buffer.CloseFile();
+        break;
+      default:
+        ERROR_PRINT("Not expected [%d]. Exiting\n", msgRet);
+        exit(1);
     }
-    const struct KermitPackage* pkg = pkgHandler.GetCurrentPkg();
-    DEBUG_PRINT("Package data received [%s]\n", pkg->data);
-  }
-  free((void*)ethName);
+  } while (msgRet != CustomProtocol::END_OF_FILE);
+
+  // std::string command = TXT_PLAYER + INPUT_FILE;
+  // std::system(command.c_str());
 }
