@@ -20,9 +20,7 @@ const unsigned long DATA_BUFFER_SIZE = 1 << 20;
 
 /* Given in miliseconds */
 const unsigned long TIMEOUT_LEN = 100;
-const unsigned long LONG_TIMEOUT = 1000;
-const unsigned long CLIENT_LONG_TIMEOUT = 5000;
-const unsigned long ENDGAME_RETRIES = 5;
+const unsigned long ENDGAME_RETRIES = 20;
 
 const int REPEATED_MSG = 1;
 const int TIMEOUT_REACHED = 2;
@@ -107,8 +105,6 @@ class NetworkHandler {
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
     void TransferData(const KermitPackage *retPkg, void *ptr, size_t *len);
-
-    int WaitForEndResponse(MsgType type, unsigned long timeout_ms);
 
   public:
     NetworkHandler();

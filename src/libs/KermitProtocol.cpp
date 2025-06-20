@@ -264,29 +264,6 @@ void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
 }
 
 //===================================================================
-// WaitForResponse
-//===================================================================
-int CustomProtocol::NetworkHandler::WaitForEndResponse(MsgType type,
-                                                    unsigned long timeout_ms) {
-  unsigned long start = timestamp();
-  while (timestamp() - start < timeout_ms) {
-    int status = this->pkgHandler->RecvPackage(false);
-    
-    if (status == VALID_NEW_MSG && 
-      this->pkgHandler->GetRecvPkg()->type == type) {
-      return VALID_NEW_MSG;
-    }
-    
-    if (status == INVALID_NEW_MSG) {
-      this->pkgHandler->InitSendPackage(NACK, NULL, 0);
-      this->pkgHandler->SendPackage();
-    }
-  }
-  
-  return TIMEOUT_REACHED;
-}
-
-//===================================================================
 // SendGeneticData
 //===================================================================
 void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
@@ -384,32 +361,14 @@ void CustomProtocol::NetworkHandler::InvertToReceiver() {
 // ServerEndGame
 //===================================================================
 void CustomProtocol::NetworkHandler::ServerEndGame() {
-  int retries = 0;
-  bool clientAcked = false;
-  unsigned long start;
-
-  while (retries < ENDGAME_RETRIES && !clientAcked) {
-    this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
+  int ret;
+  // try 20 times (2 seconds)
+  this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
+  for (int i = 0; i < ENDGAME_RETRIES; ++i) {
     this->pkgHandler->SendPackage();
-
-    if (this->WaitForEndResponse(ACK, TIMEOUT_LEN) == VALID_NEW_MSG) {
-      clientAcked = true;
-      break;
-    }
-    
-    retries++;
-    DEBUG_PRINT("Server retry %d/%d\n", retries, ENDGAME_RETRIES);
-  }
-
-  // if client confirm with ACK, waits for STOP_GAME sent from the client
-  if (clientAcked) {
-    if (this->WaitForEndResponse(STOP_GAME, LONG_TIMEOUT) == VALID_NEW_MSG) {
-      // send the finish ACK to client - try 5 times (5 seconds)
-      for (int i = 0; i < ENDGAME_RETRIES; ++i) {
-        this->pkgHandler->InitSendPackage(ACK, NULL, 0);
-        this->pkgHandler->SendPackage();
-        usleep(LONG_TIMEOUT); // 1 second
-      }
+    if (ret = this->pkgHandler->RecvPackage(false) == VALID_NEW_MSG) {
+      if (this->pkgHandler->GetRecvPkg()->type == ACK)
+        break;
     }
   }
 }
@@ -418,21 +377,10 @@ void CustomProtocol::NetworkHandler::ServerEndGame() {
 // ClientEndGame
 //===================================================================
 void CustomProtocol::NetworkHandler::ClientEndGame() {
-  if (this->WaitForEndResponse(STOP_GAME, CLIENT_LONG_TIMEOUT) == VALID_NEW_MSG) {
-    // send the finish ACK adn STOP_GAME to server - try 5 times (5 seconds)
-    for (int i = 0; i < ENDGAME_RETRIES; ++i) {
-      this->pkgHandler->InitSendPackage(ACK, NULL, 0);
-      this->pkgHandler->SendPackage();
-      usleep(LONG_TIMEOUT); // 1 second
-    }
-    for (int i = 0; i < ENDGAME_RETRIES; ++i) {
-      this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
-      this->pkgHandler->SendPackage();
-      usleep(LONG_TIMEOUT); // 1 second
-
-      if (this->WaitForEndResponse(ACK, TIMEOUT_LEN) == VALID_NEW_MSG) {
-          return;
-      }
-    }
-  }
+  int ret;
+  this->pkgHandler->InitSendPackage(ACK, NULL, 0);
+  do {
+    this->pkgHandler->SendPackage();
+    ret = this->pkgHandler->RecvPackage(false);
+  } while (ret != TIMEOUT_REACHED);
 }
