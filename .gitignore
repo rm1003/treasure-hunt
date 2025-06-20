@@ -2,7 +2,7 @@ clientT
 serverT
 objects/
 # testing/
-objects/
+# objects/
 bin/
 build/
 *.vscode

@@ -9,12 +9,11 @@
 #include <string>
 #include <cstdlib>
 
-const std::string MP4_PLAYER  = "vlc";
-const std::string MP4_OPTIONS = "--play-and-exit";
-const std::string JPG_PLAYER  = "eog";
-const std::string TXT_PLAYER  = "xed";
+const std::string MP4_PLAYER  = "vlc ";
+const std::string JPG_PLAYER  = "eog ";
+const std::string TXT_PLAYER  = "xed ";
 
-char INPUT_FILE[] = "video.mp4";
+char INPUT_FILE[] = "video.txt";
 
 int main() {
   Data::Buffer buffer;
@@ -25,7 +24,7 @@ int main() {
   unsigned char data[CustomProtocol::DATA_SIZE];
 
   buffer.OpenFileForWrite(INPUT_FILE);
-  while (1) {
+  do {
     msgRet = netHandler.RecvGenericData((void*)data, &dataLen);
 
     switch (msgRet) {
@@ -44,12 +43,8 @@ int main() {
         ERROR_PRINT("Not expected [%d]. Exiting\n", msgRet);
         exit(1);
     }
+  } while (msgRet != CustomProtocol::END_OF_FILE);
 
-    if (msgRet == CustomProtocol::END_OF_FILE)
-      break;
-  }
-
-  buffer.CloseFile();
-  std::string command = MP4_PLAYER + INPUT_FILE + MP4_OPTIONS;
-  std::system(command.c_str());
+  // std::string command = TXT_PLAYER + INPUT_FILE;
+  // std::system(command.c_str());
 }
