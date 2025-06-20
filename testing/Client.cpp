@@ -13,7 +13,7 @@ const std::string MP4_PLAYER  = "vlc ";
 const std::string JPG_PLAYER  = "eog ";
 const std::string TXT_PLAYER  = "xed ";
 
-char INPUT_FILE[] = "video.mp4";
+char INPUT_FILE[] = "video.txt";
 
 int main() {
   Data::Buffer buffer;
@@ -45,6 +45,6 @@ int main() {
     }
   } while (msgRet != CustomProtocol::END_OF_FILE);
 
-  std::string command = MP4_PLAYER + INPUT_FILE;
-  std::system(command.c_str());
+  // std::string command = TXT_PLAYER + INPUT_FILE;
+  // std::system(command.c_str());
 }

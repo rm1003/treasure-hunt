@@ -4,19 +4,23 @@
 #include "RawSocket.hpp"
 #include <cstddef>
 
+
 #define NEXT_IDX(idx) (idx + 1) & ((1 << 5) - 1)
 #define PREV_IDX(idx) (idx - 1)
 #define INC_MOD_K(idx, k) (idx + 1) % k
 
 namespace CustomProtocol {
 
+const int SEND_PKG = 1;
+const int RECV_PKG = 2;
+
 const unsigned long DATA_SIZE = 0x7f;
 const unsigned char INIT_MARK = 0x7e;
 const unsigned long DATA_BUFFER_SIZE = 1 << 20;
-const unsigned long SPLIT_BUFFER_SIZE = DATA_BUFFER_SIZE / (1 << 7);
 
 /* Given in miliseconds */
 const unsigned long TIMEOUT_LEN = 100;
+const unsigned long ENDGAME_RETRIES = 20;
 
 const int REPEATED_MSG = 1;
 const int TIMEOUT_REACHED = 2;
@@ -42,8 +46,6 @@ enum MsgType {
   ERROR
 };
 
-const char NO_SPACE_ERROR[] = "1";
-
 struct KermitPackage {
   unsigned char initMark;
   unsigned short size    : 7;
@@ -60,11 +62,9 @@ const unsigned long MAX_PACKAGE_SIZE = sizeof(KermitPackage) * 2;
 class PackageHandler {
   private:
     CustomSocket::RawSocket *sokt;
-    struct KermitPackage pkgs[2];
-    struct KermitPackage *prevPkg;
-    struct KermitPackage *currentPkg;
+    struct KermitPackage sendPkg;
+    struct KermitPackage recvPkg;
     unsigned char rawBytes[MAX_PACKAGE_SIZE];
-    unsigned char currentPkgIdx;
     unsigned char lastRecvIdx;
     unsigned char lastUsedIdx;
 
@@ -72,40 +72,29 @@ class PackageHandler {
     void SetInitMarkPkg();
     /* Append bytes that may be discard signal to network chip with 0xff.
      * It writes modified pkg in rawBytes array */
-    void Append0xff(struct KermitPackage *pkg);
+    void Append0xff();
     /* Remove 0xff sequence after every 0x81/0x88 byte sequences. It reads from
      * rawBytes array and writes to pkg */
-    void Remove0xff(struct KermitPackage *pkg);
-    /* Return checksum. Make sure to call this after all other fields were
-     * loaded */
-    unsigned char ChecksumResolver();
-    /* size of KermitPackage - DATA_SIZE + currentPkg.size */
-    size_t GetPkgSize(struct KermitPackage *pkg);
+    void Remove0xff();
+    /* Return checksum. Call this after all other fields were loaded */
+    unsigned char ChecksumResolver(int pkg);
     /* Verify if bytes pointed by currentPkg represent a KermitPackage */
     bool IsMsgKermitPackage();
-    /* Send current package. Make sure to initialize it with InitPackage.
-     * It returns whatever RecvPackage returns after Send is called */
-    int SendPackage(struct KermitPackage *pkg);
-    /* Verify checksum field of currentPkg */
+    /* Verify checksum field of recv package */
     bool VerifyChecksum();
-    /* make prevPkg point to pkgs[currentPkgIdx] and update currentPkg */
-     void SwapPkg();
   public:
     PackageHandler(const char *netIntName);
     ~PackageHandler();
     /* Initialize current package with type (message type), data (pointer
-     * to data) and number of data bytes (<= 128). If there is no data to be
-     * sent fill data with NULL and len with 0 */
-    int InitPackage(unsigned char type, void *data, unsigned short len);
-    /* Send package pointed by currentPkg */
-    int SendCurrentPkg(bool swapEnable);
-    /* Send package pointed by prevPkg */
-    int SendPreviousPkg();
+     * to data) and number of data bytes (<= 128) */
+    void InitSendPackage(unsigned short type, void *data, unsigned short len);
+    /* Send sendPkg. Returns whatever socket send returns */
+    int SendPackage();
     /* Receive package in currentPkg. This method implements timeout. It may
      * return REPEATED_MSG, TIMEOUT_REACHED, VALID_NEW_MSG or INVALID_NEW_MSG. */
-    int RecvPackage();
+    int RecvPackage(bool ignoreSequence);
     /* It returns const pointer to last received/initiated package */
-    const struct KermitPackage *GetCurrentPkg();
+    const struct KermitPackage *GetRecvPkg();
 };
 
 class NetworkHandler {
@@ -115,7 +104,6 @@ class NetworkHandler {
 
     /* Return name of network interface. Make sure to free pointer */
     const char *GetEthIntName();
-
     void TransferData(const KermitPackage *retPkg, void *ptr, size_t *len);
 
   public:
@@ -135,6 +123,10 @@ class NetworkHandler {
     void InvertToSender();
     /* Sender calls this method to become receiver */
     void InvertToReceiver();
+
+    void ServerEndGame();
+
+    void ClientEndGame();
 };
 
 }
