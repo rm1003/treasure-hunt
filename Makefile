@@ -13,10 +13,8 @@ INCLUDE 		:= -Ilibs
 INCLUDE_TEST 	:= -Isrc/libs
 
 # Arquivos fonte
-CLIENT_MAIN     := $(CLIENT_SRC)/Game.cpp       # Arquivo com main() do cliente
-SERVER_MAIN     := $(SERVER_SRC)/Backend.cpp    # Arquivo com main() do servidor
-CLIENT_SOURCES 	:= $(filter-out $(CLIENT_MAIN), $(wildcard $(CLIENT_SRC)/*.cpp)) $(wildcard $(LIBS_SRC)/*.cpp)
-SERVER_SOURCES 	:= $(filter-out $(SERVER_MAIN), $(wildcard $(SERVER_SRC)/*.cpp)) $(wildcard $(LIBS_SRC)/*.cpp)
+CLIENT_SOURCES 	:= $(wildcard $(CLIENT_SRC)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
+SERVER_SOURCES 	:= $(wildcard $(SERVER_SRC)/*.cpp) $(wildcard $(LIBS_SRC)/*.cpp)
 
 # Para arquivo de Testes
 TEST_CLIENT_SRC := testing/Client.cpp
@@ -49,11 +47,11 @@ test: test_client test_server
 debug: CXXFLAGS += $(DEBUGFLAGS)
 debug: test_client test_server
 
-client: $(OBJ_CLIENT) $(CLIENT_MAIN)
+client: $(OBJ_CLIENT)
 	@mkdir -p $(BIN_CLIENT)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(CLIENT)
 
-server: $(OBJ_SERVER) $(SERVER_MAIN)
+server: $(OBJ_SERVER)
 	@mkdir -p $(BIN_SERVER)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $(SERVER)
 
