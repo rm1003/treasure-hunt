@@ -46,38 +46,41 @@ void TreasureHunt::Server::FillHasTreasureArray() {
 }
 
 int TreasureHunt::Server::GetClientMovement() {
-  bool treasureFound;
-  bool validMove;
   MsgType msgRet;
+  Position oldPos;
+
   msgRet = this->netHandler.RecvGenericData(NULL, NULL);
+  oldPos = this->clientPos;
 
   /* verificar se cliente pode ir para a posicao desejada E se caiu em posicao de tesouro */
   switch (msgRet) {
     case CustomProtocol::MOVE_UP:
-
+      this->clientPos.MoveUp();
       break;
     case CustomProtocol::MOVE_DOWN:
-
+      this->clientPos.MoveDown();
       break;
     case CustomProtocol::MOVE_LEFT:
-
+      this->clientPos.MoveLeft();
       break;
     case CustomProtocol::MOVE_RIGHT:
-
+      this->clientPos.MoveRight();
       break;
     default:
       ERROR_PRINT("Not expected msgRet [%d]. Exiting\n", msgRet);
       exit(1);
   }
 
-  if (!validMove) {
-    this->netHandler.SendResponse();
+  if (this->clientPos.x >= GRID_SIZE || this->clientPos.x < 0 ||
+      this->clientPos.y >= GRID_SIZE || this->clientPos.y < 0) {
+    this->netHandler.SendResponse(); /* informar movimento invalido */
+    this->clientPos = oldPos; /* resetar posicao */
     return INVALID_MOVE;
   }
 
-  if (treasureFound) {
+  if (this->hasTreasure[this->clientPos.x][this->clientPos.y] == true) {
     this->netHandler.SendResponse();
-    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para NAO receber presente repetido se cair na msm casa */
+    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para NAO receber presente repetido */
 
     this->netHandler.InvertToSender(); /* inverter comunicação */
     return TREASURE_FOUND;
