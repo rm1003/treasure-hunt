@@ -77,7 +77,7 @@ int TreasureHunt::Server::GetClientMovement() {
 
   if (treasureFound) {
     this->netHandler.SendResponse();
-    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para receber presente repetido se cair na msm casa */
+    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para NAO receber presente repetido se cair na msm casa */
 
     this->netHandler.InvertToSender(); /* inverter comunicação */
     return TREASURE_FOUND;
