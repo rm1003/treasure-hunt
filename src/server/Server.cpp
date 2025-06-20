@@ -5,8 +5,8 @@
 
 TreasureHunt::Server::Server() {
   memset(this->hasTreasure, 0, sizeof(this->hasTreasure));
-  this->currentTreasure = 0;
-  this->currentClientPosition.SetPosition(0, 0);
+  this->treasureIt = 0;
+  this->clientPos.SetPosition(0, 0);
 }
 
 TreasureHunt::Server::~Server() {
@@ -17,6 +17,7 @@ void TreasureHunt::Server::ReadTreasures() {
     printf("Treasure number [%d]: ", i+1);
     std::cin >> this->treasures[i];
     DEBUG_PRINT("[%s] read\n", this->treasures[i].c_str());
+
   }
 }
 
@@ -46,6 +47,7 @@ void TreasureHunt::Server::FillHasTreasureArray() {
 
 int TreasureHunt::Server::GetClientMovement() {
   bool treasureFound;
+  bool validMove;
   MsgType msgRet;
   msgRet = this->netHandler.RecvGenericData(NULL, NULL);
 
@@ -68,7 +70,15 @@ int TreasureHunt::Server::GetClientMovement() {
       exit(1);
   }
 
+  if (!validMove) {
+    this->netHandler.SendResponse();
+    return INVALID_MOVE;
+  }
+
   if (treasureFound) {
+    this->netHandler.SendResponse();
+    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para receber presente repetido se cair na msm casa */
+
     this->netHandler.InvertToSender(); /* inverter comunicação */
     return TREASURE_FOUND;
   }
@@ -82,8 +92,10 @@ void TreasureHunt::Server::PrintClientPosition() {
 
 void TreasureHunt::Server::SendTreasure() {
 
+
+  this->treasureIt++; /* ao final, iterar para proximo tesouro */
 }
 
 bool TreasureHunt::Server::GameEnded() {
-  return (this->currentTreasure == TOTAL_TREASURES);
+  return (this->treasureIt == TOTAL_TREASURES);
 }

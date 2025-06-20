@@ -45,7 +45,7 @@ all: client server
 test: test_client test_server
 
 debug: CXXFLAGS += $(DEBUGFLAGS)
-debug: test_client test_server
+debug: client server
 
 client: $(OBJ_CLIENT)
 	@mkdir -p $(BIN_CLIENT)
