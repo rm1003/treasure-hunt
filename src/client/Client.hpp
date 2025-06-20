@@ -7,9 +7,6 @@ using CustomProtocol::MsgType;
 
 namespace TreasureHunt {
 
-const int TREASURE_FOUND = 1;
-const int VALID_MOVE = 2;
-const int INVALID_MOVE = 3;
 const char SPACE[] = "   ";
 const int NUMBER_OF_NEW_LINES = 80;
 const std::string MP4_PLAYER  = "vlc";

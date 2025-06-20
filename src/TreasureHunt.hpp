@@ -3,6 +3,10 @@
 
 namespace TreasureHunt {
 
+const int TREASURE_FOUND = 1;
+const int VALID_MOVE = 2;
+const int INVALID_MOVE = 3;
+
 const int TOTAL_TREASURES = 8;
 const int GRID_SIZE = 8;
 const int INI_X = 0;

@@ -2,6 +2,19 @@
 
 #include "Server.hpp"
 
-int main(int argc, char **argv) {
+using namespace TreasureHunt;
 
+int main(int argc, char **argv) {
+  TreasureHunt::Server server;
+  int ret;
+
+  server.ReadTreasures();
+  server.FillHasTreasureArray();
+  do {
+    ret = server.GetClientMovement(); /* obter movimento */
+    if (ret == TREASURE_FOUND) {
+      server.SendTreasure(); /* mandar tesouro */
+    }
+    server.PrintClientPosition(); /* imprimir posicao cliente */
+  } while(!server.GameEnded());
 }
