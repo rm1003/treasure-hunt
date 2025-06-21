@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
     client.PrintGrid();
 
     if (ret == TREASURE_FOUND) {
+      printf("+1 treasure found!\n");
       client.GetServerTreasure();
       client.ShowTreasure();
     }

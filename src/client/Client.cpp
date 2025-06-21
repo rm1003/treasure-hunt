@@ -17,13 +17,14 @@ TreasureHunt::Client::Client() {
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
   memset(this->wasReached, 0, sizeof(this->wasReached));
+  memset(this->hasTreasure, 0, sizeof(this->hasTreasure));
   this->wasReached[INI_X][INI_Y] = true;
   this->hasTreasure[INI_X][INI_Y] = false;
   this->filePath[0] = '\0';
   strcpy(filePath, TREASURES_DIR);
 
   printf("\n\nWelcome to TreasureHunt game!\n");
-  printf("Use keyboard arrow keys to navigate through board\n");
+  printf("Use keyboard (a, w, s, d) keys to navigate through board\n");
   printf("Some positions have treasures. You must find all of them!\n");
 }
 
