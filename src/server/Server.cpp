@@ -125,39 +125,52 @@ int TreasureHunt::Server::GetClientMovement() {
 
   if (this->clientPos.x >= GRID_SIZE || this->clientPos.x < 0 ||
       this->clientPos.y >= GRID_SIZE || this->clientPos.y < 0) {
-
-    this->netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
     this->clientPos = oldPos;
     return INVALID_MOVE;
   }
 
-  Treasure* treasureP = this->LocateTreasure(this->clientPos);
-  if (treasureP != NULL) {
-    this->foundTreasure = treasureP;
+  Treasure* treasurePtr = this->LocateTreasure(this->clientPos);
+  if (treasurePtr) {
+    this->foundTreasure = treasurePtr;
     this->foundTreasures++;
-    char *name = treasureP->treasureName;
-    switch (treasureP->type) {
-      case MP4:
-        this->netHandler.SendResponse(CustomProtocol::VIDEO_FILE_NAME_ACK,
-          name, strlen(name)+1);
-        break;
-      case JPG:
-        this->netHandler.SendResponse(CustomProtocol::IMG_FILE_NAME_ACK,
-          name, strlen(name)+1);
-        break;
-      case TXT:
-        this->netHandler.SendResponse(CustomProtocol::TXT_FILE_NAME_ACK,
-          name, strlen(name)+1);
-        break;
-    }
-    this->netHandler.InvertToSender();
-    treasureP->pos.SetPosition(-1, -1); /* invalidate treasure */
+    treasurePtr->pos.SetPosition(-1, -1); /* invalidate treasure */
     return TREASURE_FOUND;
   }
 
-  this->netHandler.SendResponse(CustomProtocol::OK_AND_ACK, NULL, 0);
-
   return VALID_MOVE;
+}
+
+void TreasureHunt::Server::RespondToClient(int ret) {
+  char *name;
+  size_t len;
+
+  switch (ret) {
+    case INVALID_MOVE:
+      this->netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
+      break;
+    case VALID_MOVE:
+      this->netHandler.SendResponse(CustomProtocol::OK_AND_ACK, NULL, 0);
+      break;
+    case TREASURE_FOUND:
+      name = this->foundTreasure->treasureName;
+      len = strlen(this->foundTreasure->treasureName) + 1;
+      switch (this->foundTreasure->type) {
+        case MP4:
+          this->netHandler.SendResponse(CustomProtocol::VIDEO_FILE_NAME_ACK, name, len);
+          break;
+        case JPG:
+          this->netHandler.SendResponse(CustomProtocol::IMG_FILE_NAME_ACK, name, len);
+          break;
+        case TXT:
+          this->netHandler.SendResponse(CustomProtocol::TXT_FILE_NAME_ACK, name, len);
+          break;
+      }
+      break;
+  }
+
+  if (ret == TREASURE_FOUND) {
+    this->netHandler.InvertToSender();
+  }
 }
 
 void TreasureHunt::Server::PrintClientPosition() {

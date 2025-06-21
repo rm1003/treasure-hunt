@@ -33,6 +33,7 @@ namespace TreasureHunt {
       void SetTreasurePositions();
       int GetTotalFound();
       int GetClientMovement();
+      void RespondToClient(int ret);
       void PrintClientPosition();
       void SendTreasure();
       bool GameEnded();

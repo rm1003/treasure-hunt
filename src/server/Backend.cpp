@@ -29,9 +29,10 @@ int main(int argc, char **argv) {
         ERROR_PRINT("Invalid ret. Exiting\n");
         exit(1);
     }
+    server.PrintClientPosition();
+    server.RespondToClient(ret);
     if (ret == TREASURE_FOUND) {
       server.SendTreasure();
     }
-    server.PrintClientPosition();
   } while(!server.GameEnded());
 }
