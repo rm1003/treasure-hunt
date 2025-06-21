@@ -2,26 +2,37 @@
 #include "../libs/KermitProtocol.hpp"
 #include "../libs/Buffer.hpp"
 
-#include <string>
+#include <vector>
 
 using CustomProtocol::MsgType;
 
 namespace TreasureHunt {
 
+  struct Treasure {
+    char treasureName[CustomProtocol::DATA_SIZE];
+    Position pos;
+    FileType type;
+    int id;
+  };
+
   class Server {
     private:
       CustomProtocol::NetworkHandler netHandler;
+      std::vector<Treasure> treasures;
+      Treasure *foundTreasure;
       Data::Buffer buffer;
-      std::string treasures[TOTAL_TREASURES];
       Position clientPos;
-      int treasureIt;
-      bool hasTreasure[GRID_SIZE][GRID_SIZE];
+      int foundTreasures;
+      char filePath[256];
 
+      /* return NULL if pos has no treasure */
+      Treasure *LocateTreasure(Position pos);
     public:
       Server();
       ~Server();
       void ReadTreasures();
-      void FillHasTreasureArray();
+      void SetTreasurePositions();
+      int GetTotalFound();
       int GetClientMovement();
       void PrintClientPosition();
       void SendTreasure();

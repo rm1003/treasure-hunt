@@ -308,10 +308,10 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
 //===================================================================
 // SendResponse
 //===================================================================
-void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
+void CustomProtocol::NetworkHandler::SendResponse(MsgType msg, void *ptr, size_t len) {
   int feedBack;
 
-  this->pkgHandler->InitSendPackage(msg, NULL, 0);
+  this->pkgHandler->InitSendPackage(msg, ptr, len);
   this->pkgHandler->SendPackage();
   do {
     feedBack = this->pkgHandler->RecvPackage(false);
@@ -363,7 +363,7 @@ void CustomProtocol::NetworkHandler::InvertToReceiver() {
 //===================================================================
 void CustomProtocol::NetworkHandler::ServerEndGame() {
   int ret;
-  // try 20 times (2 seconds)
+  /* try 20 times (2 seconds) */
   this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
   for (int i = 0; i < ENDGAME_RETRIES; ++i) {
     this->pkgHandler->SendPackage();

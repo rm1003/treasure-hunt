@@ -1,43 +1,88 @@
 #include "Server.hpp"
-#include <cstdlib>
-#include <iostream>
 #include "../libs/Logging.hpp"
+#include <cassert>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
+  ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
+}
 
 TreasureHunt::Server::Server() {
-  memset(this->hasTreasure, 0, sizeof(this->hasTreasure));
-  this->treasureIt = 0;
   this->clientPos.SetPosition(0, 0);
+  this->treasures.resize(TOTAL_TREASURES);
+  this->foundTreasures = 0;
+  this->filePath[0] = '\0';
+  strcpy(filePath, TREASURES_DIR);
+  printf("//=======================================================//\n");
+  printf("Initiated Server side of TreasureHunt game\n");
+  printf("//=======================================================//\n\n");
 }
 
 TreasureHunt::Server::~Server() {
+  this->netHandler.ServerEndGame();
+  printf("//=======================================================//\n");
+  printf("Closing Server side of TreasureHunt game\n");
+  printf("//=======================================================//\n\n");
+}
+
+TreasureHunt::Treasure *TreasureHunt::Server::LocateTreasure(Position pos) {
+  for (int it = 0; it < this->treasures.size(); it++) {
+    if (this->treasures[it].pos.Equal(pos.x, pos.y)) {
+      return &this->treasures[it];
+    }
+  }
+  return NULL;
 }
 
 void TreasureHunt::Server::ReadTreasures() {
-  for (int i = 0; i < TOTAL_TREASURES; i++) {
-    printf("Treasure number [%d]: ", i+1);
-    std::cin >> this->treasures[i];
-    DEBUG_PRINT("[%s] read\n", this->treasures[i].c_str());
+  std::string path = TREASURES_DIR;
+  int it = 0;
+  char *strIt;
 
+  for (const auto &entry : fs::directory_iterator(path)) {
+    if (it == TOTAL_TREASURES) {
+      ERROR_PRINT("Too many treasures! Exiting.\n");
+      exit(1);
+    }
+    this->treasures[it].treasureName[0] = '\0';
+    strcpy(this->treasures[it].treasureName, entry.path().filename().generic_string().c_str());
+    strIt = strchr(this->treasures[it].treasureName, '.');
+    if (!strcmp(strIt, ".mp4")) {
+      this->treasures[it].type = MP4;
+    } else if (!strcmp(strIt, ".jpg")) {
+      this->treasures[it].type = JPG;
+    } else if (!strcmp(strIt, ".txt")) {
+      this->treasures[it].type = TXT;
+    } else {
+      ERROR_PRINT("Invalid [%s]. Exiting.\n", strIt);
+      exit(1);
+    }
+    this->treasures[it].pos.SetPosition(0, 0); /* invalid position */
+    it++;
   }
 }
 
-void TreasureHunt::Server::FillHasTreasureArray() {
+void TreasureHunt::Server::SetTreasurePositions() {
   int x;
   int y;
   bool newPositionFound;
+  Position pos;
 
   for (int i = 0; i < TOTAL_TREASURES; i++) {
     newPositionFound = false;
     while (!newPositionFound) {
-      x = rand() % GRID_SIZE;
-      y = rand() % GRID_SIZE;
-      if (x == 0 && y == 0) {
+      pos.SetPosition(rand() % GRID_SIZE, rand() % GRID_SIZE);
+      if (pos.Equal(0, 0)) {
         continue;
       }
-      if (this->hasTreasure[x][y] == false) {
-        this->hasTreasure[x][y] = true;
-        newPositionFound = true; /* achou nova posicao nao ocupada */
-        DEBUG_PRINT("x [%d] y [%d] selected\n", x, y);
+      if (this->LocateTreasure(pos) == NULL) {
+        this->treasures[i].pos = pos;
+        newPositionFound = true;
       }
     }
   }
@@ -72,32 +117,97 @@ int TreasureHunt::Server::GetClientMovement() {
   if (this->clientPos.x >= GRID_SIZE || this->clientPos.x < 0 ||
       this->clientPos.y >= GRID_SIZE || this->clientPos.y < 0) {
 
-    this->netHandler.SendResponse();
+    this->netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
     this->clientPos = oldPos;
     return INVALID_MOVE;
   }
 
-  if (this->hasTreasure[this->clientPos.x][this->clientPos.y] == true) {
-    this->netHandler.SendResponse();
-    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false;
-
+  Treasure* treasureP = this->LocateTreasure(this->clientPos);
+  if (treasureP != NULL) {
+    this->foundTreasure = treasureP;
+    this->foundTreasures++;
+    char *name = treasureP->treasureName;
+    switch (treasureP->type) {
+      case MP4:
+        this->netHandler.SendResponse(CustomProtocol::VIDEO_FILE_NAME_ACK, name,
+          strlen(name)+1);
+        break;
+      case JPG:
+        this->netHandler.SendResponse(CustomProtocol::IMG_FILE_NAME_ACK, name,
+          strlen(name)+1);
+        break;
+      case TXT:
+        this->netHandler.SendResponse(CustomProtocol::TXT_FILE_NAME_ACK, name,
+          strlen(name)+1);
+        break;
+    }
     this->netHandler.InvertToSender();
+    treasureP->pos.SetPosition(-1, -1); /* invalidate */
     return TREASURE_FOUND;
   }
+
+  this->netHandler.SendResponse(CustomProtocol::OK_AND_ACK, NULL, 0);
 
   return VALID_MOVE;
 }
 
 void TreasureHunt::Server::PrintClientPosition() {
-
+  printf("Client position [%d][%d]\n", this->clientPos.x, this->clientPos.y);
 }
 
 void TreasureHunt::Server::SendTreasure() {
+  size_t fileSize;
+  MsgType msgRet;
+  int intRet;
+  void *ptr;
+  size_t actualSize;
 
+  strcat(this->filePath, this->foundTreasure->treasureName);
 
-  this->treasureIt++;
+  fs::path arquivo(this->filePath);
+  fileSize = fs::file_size(arquivo);
+  DEBUG_PRINT("File size [%lu]\n", fileSize);
+  this->netHandler.SendGenericData(CustomProtocol::FILE_SIZE, &fileSize, sizeof(fileSize));
+  msgRet = netHandler.RecvResponse(NULL, NULL);
+  if (msgRet == CustomProtocol::ERROR) {
+    printf("Client cant handle file of size [%lu]. Exiting.", fileSize);
+    exit(1);
+  }
+  if (msgRet != CustomProtocol::ACK) {
+    PrintErrorMsgType(msgRet, "SendTreasure");
+    exit(1);
+  }
+
+  buffer.OpenFileForRead(this->filePath);
+  while(1) {
+    ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    if (ptr == NULL) {
+      if (!this->buffer.RetrieveBuffer()) {
+        netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
+        msgRet = netHandler.RecvResponse(NULL, NULL);
+        assert(msgRet == CustomProtocol::ACK);
+        break;
+      }
+      ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    }
+
+    netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
+    msgRet = netHandler.RecvResponse(NULL, NULL);
+    assert(msgRet == CustomProtocol::ACK);
+  }
+  buffer.CloseFile();
+
+  if (this->foundTreasures != TOTAL_TREASURES) {
+    this->netHandler.InvertToReceiver();
+  }
+
+  this->filePath[sizeof(TREASURES_DIR)-1] = '\0';
 }
 
 bool TreasureHunt::Server::GameEnded() {
-  return (this->treasureIt == TOTAL_TREASURES);
+  return (this->foundTreasures == TOTAL_TREASURES);
+}
+
+int TreasureHunt::Server::GetTotalFound() {
+  return this->foundTreasures;
 }

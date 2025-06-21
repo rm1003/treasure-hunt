@@ -14,13 +14,13 @@ namespace CustomProtocol {
 const int SEND_PKG = 1;
 const int RECV_PKG = 2;
 
-const unsigned long DATA_SIZE = 0x7f;
+const int DATA_SIZE = 0x7f;
 const unsigned char INIT_MARK = 0x7e;
-const unsigned long DATA_BUFFER_SIZE = 1 << 20;
+const int DATA_BUFFER_SIZE = 1 << 20;
 
 /* Given in miliseconds */
-const unsigned long TIMEOUT_LEN = 100;
-const unsigned long ENDGAME_RETRIES = 20;
+const int TIMEOUT_LEN = 100;
+const int ENDGAME_RETRIES = 20;
 
 const int REPEATED_MSG = 1;
 const int TIMEOUT_REACHED = 2;
@@ -115,7 +115,7 @@ class NetworkHandler {
     MsgType RecvGenericData(void *ptr, size_t *len);
     /* Used by receiver to send response of a message (e.g. ACK). Blocks until
      * new valid message arrives */
-    void SendResponse(MsgType msg);
+    void SendResponse(MsgType msg, void *ptr, size_t len);
     /* Used by sender to get response of a sent message
      * Does not block. Just unpacks currentPkg */
     MsgType RecvResponse(void *ptr, size_t *len);
@@ -123,9 +123,9 @@ class NetworkHandler {
     void InvertToSender();
     /* Sender calls this method to become receiver */
     void InvertToReceiver();
-
+    /* */
     void ServerEndGame();
-
+    /* */
     void ClientEndGame();
 };
 

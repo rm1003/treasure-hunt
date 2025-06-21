@@ -30,7 +30,7 @@ class Client {
 
   public:
     Client();
-    ~Client() {};
+    ~Client();
     void PrintGrid();
     void PrintEmptySpace();
     /* */

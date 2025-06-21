@@ -69,8 +69,8 @@ $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	find $(SRC_DIR) $(TEST_DIR) -name "*.o" -delete
-	rm -f $(CLIENT) $(SERVER) $(TEST)
+	find $(OBJ_DIR) -name "*.o" -delete
+# rm -f $(CLIENT) $(SERVER) $(TEST)
 
 purge: clean
 	rm -rf $(BIN_DIR)

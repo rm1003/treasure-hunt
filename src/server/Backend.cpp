@@ -1,6 +1,7 @@
 /** main function definition for server side of Treasure Hunt game **/
 
 #include "Server.hpp"
+#include "../libs/Logging.hpp"
 
 using namespace TreasureHunt;
 
@@ -9,9 +10,25 @@ int main(int argc, char **argv) {
   int ret;
 
   server.ReadTreasures();
-  server.FillHasTreasureArray();
+  server.SetTreasurePositions();
   do {
+    printf("Waiting for next move...\n");
     ret = server.GetClientMovement();
+    printf("Got it!\n");
+    switch (ret) {
+      case INVALID_MOVE:
+        printf("Client tried to make invalid move!\n");
+        break;
+      case VALID_MOVE:
+        printf("Valid move!\n");
+        break;
+      case TREASURE_FOUND:
+        printf("Client found treasure! [%d] found.\n", server.GetTotalFound());
+        break;
+      default:
+        ERROR_PRINT("Invalid ret. Exiting\n");
+        exit(1);
+    }
     if (ret == TREASURE_FOUND) {
       server.SendTreasure();
     }

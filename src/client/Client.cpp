@@ -21,6 +21,18 @@ TreasureHunt::Client::Client() {
   this->hasTreasure[INI_X][INI_Y] = false;
   this->filePath[0] = '\0';
   strcpy(filePath, TREASURES_DIR);
+
+  printf("Welcome to TreasureHunt game!\n");
+  printf("Instructions:'\n");
+  printf("Use keyboard arrow keys to navigate through board\n");
+  printf("Some positions have treasures. You must find all of them!\n");
+  printf("Press any key to start game...");
+  getchar();
+}
+
+TreasureHunt::Client::~Client() {
+  this->netHandler.ClientEndGame();
+  printf("\n\nCongratulations! You found all [%d] treasures!\n", TOTAL_TREASURES);
 }
 
 void TreasureHunt::Client::PrintGrid() {
@@ -108,17 +120,17 @@ void TreasureHunt::Client::GetServerTreasure() {
   availableSize = spaceInfo.available;
   if (fileSize > availableSize) {
     ERROR_PRINT("Available [%lu]; Requested [%lu]\n", availableSize, fileSize);
-    this->netHandler.SendResponse(CustomProtocol::ERROR);
+    this->netHandler.SendResponse(CustomProtocol::ERROR, NULL, 0);
     exit(1);
   }
-  this->netHandler.SendResponse(CustomProtocol::ACK);
+  this->netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
 
   this->buffer.OpenFileForWrite(filePath);
   do {
     msgRet = netHandler.RecvGenericData(this->data, &dataLen);
+    netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
     switch (msgRet) {
       case CustomProtocol::DATA:
-        netHandler.SendResponse(CustomProtocol::ACK);
         if (buffer.AppendToBuffer(data, dataLen)) {
           buffer.FlushBuffer();
           buffer.AppendToBuffer(data, dataLen);
@@ -130,7 +142,6 @@ void TreasureHunt::Client::GetServerTreasure() {
         break;
       default:
         PrintErrorMsgType(msgRet, "GetServerTreasure");
-        exit(1);
     }
   } while(msgRet != CustomProtocol::END_OF_FILE);
 
