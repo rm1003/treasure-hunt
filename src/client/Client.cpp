@@ -1,5 +1,6 @@
 #include "Client.hpp"
 #include "../libs/Logging.hpp"
+#include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -8,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
+static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
   ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
 }
 
@@ -18,6 +19,8 @@ TreasureHunt::Client::Client() {
   memset(this->wasReached, 0, sizeof(this->wasReached));
   this->wasReached[INI_X][INI_Y] = true;
   this->hasTreasure[INI_X][INI_Y] = false;
+  this->filePath[0] = '\0';
+  strcpy(filePath, TREASURES_DIR);
 }
 
 void TreasureHunt::Client::PrintGrid() {
@@ -57,8 +60,9 @@ void TreasureHunt::Client::PrintEmptySpace() {
 
 int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   MsgType ret;
+  char *treasureName = &this->filePath[sizeof(TREASURES_DIR) - sizeof('\0')];
   netHandler.SendGenericData(mov, NULL, 0);
-  ret = netHandler.RecvGenericData((void*)this->treasureFileName, NULL);
+  ret = netHandler.RecvResponse((void*)treasureName, NULL);
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;
   } else if (ret == CustomProtocol::ACK) {
@@ -75,7 +79,7 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
         this->treasureType = MP4;
         break;
       default:
-        ERROR_PRINT("Not expected return type. Exiting.\n");
+        PrintErrorMsgType(ret, "InformServerMovement");
         exit(1);
     }
   }
@@ -84,55 +88,55 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   return TREASURE_FOUND;
 }
 
-int TreasureHunt::Client::GetServerTreasure() {
+void TreasureHunt::Client::GetServerTreasure() {
   MsgType msgRet;
   fs::space_info spaceInfo;
-  int intRet;
   size_t fileSize;
   size_t availableSize;
   size_t dataLen;
-  static unsigned char data[CustomProtocol::DATA_SIZE];
 
   /* considering that player already moved to new location */
   this->hasTreasure[this->currentPosition.x][this->currentPosition.y] = true;
+  this->numberOfFoundTreasures++;
 
   /* get file size and test if there is enough disk space */
-  msgRet = this->netHandler.RecvGenericData((void*)data, NULL);
-  if (msgRet != CustomProtocol::FILE_SIZE) {
-    PrintErrorMsgType(msgRet, "GetServerTreasure/1st test");
-    exit(1);
-  }
-  fileSize = *(size_t *)(data);
+  msgRet = this->netHandler.RecvGenericData(this->data, NULL);
+  assert(msgRet == CustomProtocol::FILE_SIZE);
+  fileSize = *(size_t *)(this->data);
 
   spaceInfo = fs::space(TREASURES_DIR);
   availableSize = spaceInfo.available;
   if (fileSize > availableSize) {
     ERROR_PRINT("Available [%lu]; Requested [%lu]\n", availableSize, fileSize);
     this->netHandler.SendResponse(CustomProtocol::ERROR);
-    ERROR_PRINT("Warned server that file size is incompatible. Exiting.\n");
     exit(1);
   }
   this->netHandler.SendResponse(CustomProtocol::ACK);
 
-  /* considering that treasureFileName is already complete path */
-  this->buffer.OpenFileForWrite(treasureFileName);
-  while (1) {
-    msgRet = this->netHandler.RecvGenericData((void*)data, &dataLen);
-    if (msgRet == CustomProtocol::END_OF_FILE) {
-      this->buffer.FlushBuffer();
-      this->buffer.CloseFile();
-      break;
+  this->buffer.OpenFileForWrite(filePath);
+  do {
+    msgRet = netHandler.RecvGenericData(this->data, &dataLen);
+    switch (msgRet) {
+      case CustomProtocol::DATA:
+        netHandler.SendResponse(CustomProtocol::ACK);
+        if (buffer.AppendToBuffer(data, dataLen)) {
+          buffer.FlushBuffer();
+          buffer.AppendToBuffer(data, dataLen);
+        }
+        break;
+      case CustomProtocol::END_OF_FILE:
+        buffer.FlushBuffer();
+        buffer.CloseFile();
+        break;
+      default:
+        PrintErrorMsgType(msgRet, "GetServerTreasure");
+        exit(1);
     }
-    /* append data to buffer */
-    intRet = this->buffer.AppendToBuffer(data, dataLen);
-    if (intRet == Data::APPEND_IMPOSSIBLE) {
-      this->buffer.FlushBuffer();
-      this->buffer.AppendToBuffer(data, dataLen);
-    }
-    this->netHandler.SendResponse(CustomProtocol::ACK);
-  }
+  } while(msgRet != CustomProtocol::END_OF_FILE);
 
-  return 0;
+  if (numberOfFoundTreasures != TOTAL_TREASURES) {
+    this->netHandler.InvertToSender();
+  }
 }
 
 int TreasureHunt::Client::ShowTreasure() {
@@ -141,13 +145,13 @@ int TreasureHunt::Client::ShowTreasure() {
 
   switch (this->treasureType) {
     case MP4:
-      command = MP4_PLAYER + this->treasureFileName + MP4_OPTIONS;
+      command = SUDO_OPT + MP4_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case JPG:
-      command = JPG_PLAYER + this->treasureFileName;
+      command = SUDO_OPT + JPG_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     case TXT:
-      command = TXT_PLAYER + this->treasureFileName;
+      command = SUDO_OPT + TXT_PLAYER + this->filePath;
       ret = std::system(command.c_str());
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");
@@ -171,8 +175,12 @@ void TreasureHunt::Client::Move(MsgType mov) {
       this->currentPosition.MoveDown();
       break;
     default:
-      ERROR_PRINT("Invalid movement in [Client::Move]. Exiting.\n");
+      ERROR_PRINT("Invalid movement in [Move]. Exiting.\n");
       exit(1);
   }
   this->wasReached[this->currentPosition.x][this->currentPosition.y] = true;
+}
+
+bool TreasureHunt::Client::GameEnded() {
+  return (this->numberOfFoundTreasures == TOTAL_TREASURES);
 }

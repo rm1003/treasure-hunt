@@ -267,16 +267,17 @@ void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
 // SendGeneticData
 //===================================================================
 void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
-  this->pkgHandler->InitSendPackage(msg, ptr, len);
-  this->pkgHandler->SendPackage();
-  int feedBack = this->pkgHandler->RecvPackage(true);
-  unsigned short type = this->pkgHandler->GetRecvPkg()->type;
+  int feedBack;
+  unsigned short type;
 
-  while (feedBack != VALID_NEW_MSG || type == NACK) {
+  this->pkgHandler->InitSendPackage(msg, ptr, len);
+  do {
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
-  }
+  } while(feedBack != VALID_NEW_MSG || type == NACK);
+
+  this->isFirstRecv = false;
 }
 
 //===================================================================
@@ -366,7 +367,8 @@ void CustomProtocol::NetworkHandler::ServerEndGame() {
   this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
   for (int i = 0; i < ENDGAME_RETRIES; ++i) {
     this->pkgHandler->SendPackage();
-    if (ret = this->pkgHandler->RecvPackage(false) == VALID_NEW_MSG) {
+    ret = this->pkgHandler->RecvPackage(true);
+    if (ret == VALID_NEW_MSG) {
       if (this->pkgHandler->GetRecvPkg()->type == ACK)
         break;
     }
@@ -381,6 +383,6 @@ void CustomProtocol::NetworkHandler::ClientEndGame() {
   this->pkgHandler->InitSendPackage(ACK, NULL, 0);
   do {
     this->pkgHandler->SendPackage();
-    ret = this->pkgHandler->RecvPackage(false);
+    ret = this->pkgHandler->RecvPackage(true);
   } while (ret != TIMEOUT_REACHED);
 }

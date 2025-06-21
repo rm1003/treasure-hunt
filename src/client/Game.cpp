@@ -11,7 +11,7 @@ bool IsNotMovementKey(char key) {
   return (key != 'w' && key != 'a' && key != 's' && key != 'd');
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   struct termios newConfT;
   struct termios oldConfT;
   TreasureHunt::Client client;
@@ -25,7 +25,7 @@ int main() {
 
   client.PrintEmptySpace();
   client.PrintGrid();
-  while (1) {
+  do {
     do {
       key = getchar();
     } while (IsNotMovementKey(key));
@@ -53,14 +53,14 @@ int main() {
         break;
     }
 
+    client.PrintEmptySpace();
+    client.PrintGrid();
+
     if (ret == TREASURE_FOUND) {
       client.GetServerTreasure();
       client.ShowTreasure();
     }
-
-    client.PrintEmptySpace();
-    client.PrintGrid();
-  }
+  } while (!client.GameEnded());
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);
 

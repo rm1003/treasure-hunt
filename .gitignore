@@ -1,11 +1,11 @@
 clientT
 serverT
+objects/
 # testing/
 # objects/
 bin/
 build/
 *.vscode
-*.mp4
 # Object files
 *.o
 *.ko
@@ -16,4 +16,3 @@ build/
 *.ilk
 *.map
 *.exp
-

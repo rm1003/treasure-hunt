@@ -101,7 +101,8 @@ int Data::Buffer::AppendToBuffer(void *ptr, size_t len) {
     exit(1);
   }
 
-  if (this->offset + len > BUFFER_SIZE) return APPEND_IMPOSSIBLE;
+  if (this->offset + len > BUFFER_SIZE)
+    return 1;
 
   memcpy(this->store + this->offset, ptr, len);
   this->offset += len;
