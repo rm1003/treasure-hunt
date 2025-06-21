@@ -12,10 +12,10 @@ namespace TreasureHunt {
     private:
       CustomProtocol::NetworkHandler netHandler;
       Data::Buffer buffer;
-      std::string treasures[TOTAL_TREASURES]; /* guarda nomes tesouros */
-      Position clientPos; /* posicao atual cliente */
-      int treasureIt; /* posicao no vetor 'treasures' */
-      bool hasTreasure[GRID_SIZE][GRID_SIZE]; /* matriz booleana indica se tem tesouro na posicao (x,y) */
+      std::string treasures[TOTAL_TREASURES];
+      Position clientPos;
+      int treasureIt;
+      bool hasTreasure[GRID_SIZE][GRID_SIZE];
 
     public:
       Server();

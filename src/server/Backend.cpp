@@ -11,10 +11,10 @@ int main(int argc, char **argv) {
   server.ReadTreasures();
   server.FillHasTreasureArray();
   do {
-    ret = server.GetClientMovement(); /* obter movimento */
+    ret = server.GetClientMovement();
     if (ret == TREASURE_FOUND) {
-      server.SendTreasure(); /* mandar tesouro */
+      server.SendTreasure();
     }
-    server.PrintClientPosition(); /* imprimir posicao cliente */
+    server.PrintClientPosition();
   } while(!server.GameEnded());
 }

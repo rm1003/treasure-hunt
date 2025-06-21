@@ -26,7 +26,6 @@ void TreasureHunt::Server::FillHasTreasureArray() {
   int y;
   bool newPositionFound;
 
-  /* ideia aqui é sortear quais posicoes tem tesouro */
   for (int i = 0; i < TOTAL_TREASURES; i++) {
     newPositionFound = false;
     while (!newPositionFound) {
@@ -52,7 +51,6 @@ int TreasureHunt::Server::GetClientMovement() {
   msgRet = this->netHandler.RecvGenericData(NULL, NULL);
   oldPos = this->clientPos;
 
-  /* verificar se cliente pode ir para a posicao desejada E se caiu em posicao de tesouro */
   switch (msgRet) {
     case CustomProtocol::MOVE_UP:
       this->clientPos.MoveUp();
@@ -73,16 +71,17 @@ int TreasureHunt::Server::GetClientMovement() {
 
   if (this->clientPos.x >= GRID_SIZE || this->clientPos.x < 0 ||
       this->clientPos.y >= GRID_SIZE || this->clientPos.y < 0) {
-    this->netHandler.SendResponse(); /* informar movimento invalido */
-    this->clientPos = oldPos; /* resetar posicao */
+
+    this->netHandler.SendResponse();
+    this->clientPos = oldPos;
     return INVALID_MOVE;
   }
 
   if (this->hasTreasure[this->clientPos.x][this->clientPos.y] == true) {
     this->netHandler.SendResponse();
-    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false; /* serve para NAO receber presente repetido */
+    this->hasTreasure[this->clientPos.x][this->clientPos.y] = false;
 
-    this->netHandler.InvertToSender(); /* inverter comunicação */
+    this->netHandler.InvertToSender();
     return TREASURE_FOUND;
   }
 
@@ -96,7 +95,7 @@ void TreasureHunt::Server::PrintClientPosition() {
 void TreasureHunt::Server::SendTreasure() {
 
 
-  this->treasureIt++; /* ao final, iterar para proximo tesouro */
+  this->treasureIt++;
 }
 
 bool TreasureHunt::Server::GameEnded() {
