@@ -22,12 +22,9 @@ TreasureHunt::Client::Client() {
   this->filePath[0] = '\0';
   strcpy(filePath, TREASURES_DIR);
 
-  printf("Welcome to TreasureHunt game!\n");
-  printf("Instructions:'\n");
+  printf("\n\nWelcome to TreasureHunt game!\n");
   printf("Use keyboard arrow keys to navigate through board\n");
   printf("Some positions have treasures. You must find all of them!\n");
-  printf("Press any key to start game...");
-  getchar();
 }
 
 TreasureHunt::Client::~Client() {

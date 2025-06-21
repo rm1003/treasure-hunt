@@ -12,9 +12,9 @@ int main(int argc, char **argv) {
   server.ReadTreasures();
   server.SetTreasurePositions();
   do {
-    printf("Waiting for next move...\n");
+    printf("\nWaiting for next move...\n");
     ret = server.GetClientMovement();
-    printf("Got it!\n");
+    printf("Got it!: ");
     switch (ret) {
       case INVALID_MOVE:
         printf("Client tried to make invalid move!\n");

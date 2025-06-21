@@ -18,9 +18,9 @@ TreasureHunt::Server::Server() {
   this->foundTreasures = 0;
   this->filePath[0] = '\0';
   strcpy(filePath, TREASURES_DIR);
-  printf("//=======================================================//\n");
+  printf("\n//=======================================================//\n");
   printf("Initiated Server side of TreasureHunt game\n");
-  printf("//=======================================================//\n\n");
+  printf("//=======================================================//\n");
 }
 
 TreasureHunt::Server::~Server() {
@@ -31,7 +31,7 @@ TreasureHunt::Server::~Server() {
 }
 
 TreasureHunt::Treasure *TreasureHunt::Server::LocateTreasure(Position pos) {
-  for (int it = 0; it < this->treasures.size(); it++) {
+  for (int it = 0; it < TOTAL_TREASURES; it++) {
     if (this->treasures[it].pos.Equal(pos.x, pos.y)) {
       return &this->treasures[it];
     }
@@ -43,6 +43,9 @@ void TreasureHunt::Server::ReadTreasures() {
   std::string path = TREASURES_DIR;
   int it = 0;
   char *strIt;
+
+  printf("\nReading treasures...\n");
+  printf("Type [1] = TXT; Type[2] = MP4; Type[3] = JPG\n");
 
   for (const auto &entry : fs::directory_iterator(path)) {
     if (it == TOTAL_TREASURES) {
@@ -62,16 +65,19 @@ void TreasureHunt::Server::ReadTreasures() {
       ERROR_PRINT("Invalid [%s]. Exiting.\n", strIt);
       exit(1);
     }
+    printf("Treasure [%s] registered ", this->treasures[it].treasureName);
+    printf("Type [%d]\n", this->treasures[it].type);
     this->treasures[it].pos.SetPosition(0, 0); /* invalid position */
     it++;
   }
+
 }
 
 void TreasureHunt::Server::SetTreasurePositions() {
-  int x;
-  int y;
   bool newPositionFound;
   Position pos;
+
+  printf("\nSetting random positions to treasures...\n");
 
   for (int i = 0; i < TOTAL_TREASURES; i++) {
     newPositionFound = false;
@@ -85,6 +91,9 @@ void TreasureHunt::Server::SetTreasurePositions() {
         newPositionFound = true;
       }
     }
+    printf("Set [%s] to [%d][%d]\n", this->treasures[i].treasureName,
+                                     this->treasures[i].pos.x,
+                                     this->treasures[i].pos.y);
   }
 
 }
@@ -129,20 +138,20 @@ int TreasureHunt::Server::GetClientMovement() {
     char *name = treasureP->treasureName;
     switch (treasureP->type) {
       case MP4:
-        this->netHandler.SendResponse(CustomProtocol::VIDEO_FILE_NAME_ACK, name,
-          strlen(name)+1);
+        this->netHandler.SendResponse(CustomProtocol::VIDEO_FILE_NAME_ACK,
+          name, strlen(name)+1);
         break;
       case JPG:
-        this->netHandler.SendResponse(CustomProtocol::IMG_FILE_NAME_ACK, name,
-          strlen(name)+1);
+        this->netHandler.SendResponse(CustomProtocol::IMG_FILE_NAME_ACK,
+          name, strlen(name)+1);
         break;
       case TXT:
-        this->netHandler.SendResponse(CustomProtocol::TXT_FILE_NAME_ACK, name,
-          strlen(name)+1);
+        this->netHandler.SendResponse(CustomProtocol::TXT_FILE_NAME_ACK,
+          name, strlen(name)+1);
         break;
     }
     this->netHandler.InvertToSender();
-    treasureP->pos.SetPosition(-1, -1); /* invalidate */
+    treasureP->pos.SetPosition(-1, -1); /* invalidate treasure */
     return TREASURE_FOUND;
   }
 
@@ -158,15 +167,15 @@ void TreasureHunt::Server::PrintClientPosition() {
 void TreasureHunt::Server::SendTreasure() {
   size_t fileSize;
   MsgType msgRet;
-  int intRet;
   void *ptr;
   size_t actualSize;
 
   strcat(this->filePath, this->foundTreasure->treasureName);
 
   fs::path arquivo(this->filePath);
+  printf("File path [%s]; ", this->filePath);
   fileSize = fs::file_size(arquivo);
-  DEBUG_PRINT("File size [%lu]\n", fileSize);
+  printf("File size [%lu]\n", fileSize);
   this->netHandler.SendGenericData(CustomProtocol::FILE_SIZE, &fileSize, sizeof(fileSize));
   msgRet = netHandler.RecvResponse(NULL, NULL);
   if (msgRet == CustomProtocol::ERROR) {
@@ -179,22 +188,23 @@ void TreasureHunt::Server::SendTreasure() {
   }
 
   buffer.OpenFileForRead(this->filePath);
-  while(1) {
-    ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
-    if (ptr == NULL) {
-      if (!this->buffer.RetrieveBuffer()) {
-        netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
-        msgRet = netHandler.RecvResponse(NULL, NULL);
-        assert(msgRet == CustomProtocol::ACK);
-        break;
-      }
-      ptr = buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
-    }
-
+  ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+  do {
     netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
     msgRet = netHandler.RecvResponse(NULL, NULL);
     assert(msgRet == CustomProtocol::ACK);
-  }
+
+    ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+    if (ptr == NULL) {
+      if (this->buffer.RetrieveBuffer()) {
+        ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
+      }
+    }
+  } while (ptr != NULL);
+
+  netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
+  msgRet = netHandler.RecvResponse(NULL, NULL);
+  assert(msgRet == CustomProtocol::ACK);
   buffer.CloseFile();
 
   if (this->foundTreasures != TOTAL_TREASURES) {

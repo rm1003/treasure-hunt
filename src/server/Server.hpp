@@ -12,7 +12,6 @@ namespace TreasureHunt {
     char treasureName[CustomProtocol::DATA_SIZE];
     Position pos;
     FileType type;
-    int id;
   };
 
   class Server {
