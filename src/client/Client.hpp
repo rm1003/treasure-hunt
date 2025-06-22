@@ -13,12 +13,14 @@ const int NUMBER_OF_NEW_LINES = 80;
 const std::string MP4_PLAYER  = "vlc ";
 const std::string JPG_PLAYER  = "eog ";
 const std::string TXT_PLAYER  = "xed ";
-const std::string USER        = "fbc04 ";
-const std::string SUDO_OPT    = "sudo -u " + USER;
+const std::string SUDO_OPT    = "sudo -u ";
+const std::string STDERR_OPT = "2> /dev/null ";
+
 
 class Client {
   private:
     CustomProtocol::NetworkHandler netHandler;
+    std::string user;
     Data::Buffer buffer;
     FileType treasureType;
     Position currentPosition;

@@ -70,9 +70,14 @@ void TreasureHunt::Client::PrintEmptySpace() {
 
 int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   MsgType ret;
-  char *treasureName = &this->filePath[sizeof(TREASURES_DIR) - sizeof('\0')];
-  netHandler.SendGenericData(mov, NULL, 0);
-  ret = netHandler.RecvResponse((void*)treasureName, NULL);
+  char *treasureName;
+
+  treasureName = &this->filePath[sizeof(TREASURES_DIR) - sizeof('\0')];
+  do {
+    netHandler.SendGenericData(mov, NULL, 0);
+    ret = netHandler.RecvResponse((void*)treasureName, NULL);
+  } while (ret == CustomProtocol::INVERT);
+
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;
   } else if (ret == CustomProtocol::ACK) {
@@ -150,15 +155,15 @@ int TreasureHunt::Client::ShowTreasure() {
   printf("Setting up to show treasure...\n");
   switch (this->treasureType) {
     case MP4:
-      command = SUDO_OPT + MP4_PLAYER + this->filePath;
+      command = SUDO_OPT + MP4_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     case JPG:
-      command = SUDO_OPT + JPG_PLAYER + this->filePath;
+      command = SUDO_OPT + JPG_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     case TXT:
-      command = SUDO_OPT + TXT_PLAYER + this->filePath;
+      command = SUDO_OPT + TXT_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     default:
