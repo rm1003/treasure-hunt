@@ -277,9 +277,6 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
-    if (feedBack == TIMEOUT_REACHED) {
-      printf("Trying to send pkg again\n");
-    }
   } while(feedBack != VALID_NEW_MSG || type == NACK || type == INVERT);
 
   this->isFirstRecv = false;
@@ -320,15 +317,14 @@ void CustomProtocol::NetworkHandler::SendResponse(MsgType msg, void *ptr, size_t
   this->pkgHandler->SendPackage();
   do {
     feedBack = this->pkgHandler->RecvPackage(false);
-    switch (feedBack) {
-      case REPEATED_MSG:
-        this->pkgHandler->SendPackage();
-        break;
-      case INVALID_NEW_MSG:
-        /* create NACK pkg then revert to original */
+    if (feedBack == REPEATED_MSG) {
+      this->pkgHandler->SendPackage();
+    } else {
+      if (feedBack == INVALID_NEW_MSG) {
         this->pkgHandler->InitSendPackage(NACK, NULL, 0);
         this->pkgHandler->SendPackage();
-        this->pkgHandler->InitSendPackage(msg, NULL, 0);
+        this->pkgHandler->InitSendPackage(msg, NULL, 0); /* revert to original */
+      }
     }
   } while (feedBack != VALID_NEW_MSG);
 }
