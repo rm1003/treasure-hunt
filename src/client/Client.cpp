@@ -18,10 +18,7 @@ static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location)
 }
 
 TreasureHunt::Client::Client() {
-  uid_t uid = getuid();
-  struct passwd *info = getpwuid(uid);
-  this->user = info->pw_name;
-
+  this->user = getpwuid(getuid())->pw_name;
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
   memset(this->wasReached, 0, sizeof(this->wasReached));
@@ -31,7 +28,7 @@ TreasureHunt::Client::Client() {
   this->filePath[0] = '\0';
   strcpy(filePath, TREASURES_DIR);
 
-  printf("\n\nWelcome to TreasureHunt game!\n");
+  printf("\n\nWelcome to TreasureHunt game %s!\n", this->user.c_str());
   printf("Use keyboard (a, w, s, d) keys to navigate through board\n");
   printf("Some positions have treasures. You must find all of them!\n");
 }
