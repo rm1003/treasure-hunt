@@ -360,7 +360,7 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 // InvertToReceiver
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
-  this->SendResponse(INVERT, NULL, 0);
+  this->SendGenericData(INVERT, NULL, 0);
 }
 
 //===================================================================
