@@ -33,7 +33,6 @@ class Client {
   public:
     Client();
     ~Client();
-    void GetUser();
     void PrintGrid();
     void PrintEmptySpace();
     void Move(MsgType mov);

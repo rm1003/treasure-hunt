@@ -18,6 +18,10 @@ static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location)
 }
 
 TreasureHunt::Client::Client() {
+  uid_t uid = getuid();
+  struct passwd *info = getpwuid(uid);
+  this->user = info->pw_name;
+
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
   memset(this->wasReached, 0, sizeof(this->wasReached));
@@ -63,12 +67,6 @@ void TreasureHunt::Client::PrintGrid() {
   }
 
   fflush(stdout);
-}
-
-void TreasureHunt::Client::GetUser() {
-  uid_t uid = getuid();
-  struct passwd *info = getpwuid(uid);
-  this->user = info->pw_name;
 }
 
 void TreasureHunt::Client::PrintEmptySpace() {
