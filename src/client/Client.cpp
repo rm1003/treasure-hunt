@@ -79,23 +79,23 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
 
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;
-  } else if (ret == CustomProtocol::ACK) {
+  }
+  if (ret == CustomProtocol::ACK) {
     return INVALID_MOVE;
-  } else {
-    switch (ret) {
-      case CustomProtocol::TXT_FILE_NAME_ACK:
-        this->treasureType = TXT;
-        break;
-      case CustomProtocol::IMG_FILE_NAME_ACK:
-        this->treasureType = JPG;
-        break;
-      case CustomProtocol::VIDEO_FILE_NAME_ACK:
-        this->treasureType = MP4;
-        break;
-      default:
-        PrintErrorMsgType(ret, "InformServerMovement");
-        exit(1);
-    }
+  }
+  switch (ret) {
+    case CustomProtocol::TXT_FILE_NAME_ACK:
+      this->treasureType = TXT;
+      break;
+    case CustomProtocol::IMG_FILE_NAME_ACK:
+      this->treasureType = JPG;
+      break;
+    case CustomProtocol::VIDEO_FILE_NAME_ACK:
+      this->treasureType = MP4;
+      break;
+    default:
+      PrintErrorMsgType(ret, "InformServerMovement");
+      exit(1);
   }
   this->netHandler.InvertToReceiver();
 
