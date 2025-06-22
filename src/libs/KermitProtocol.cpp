@@ -277,7 +277,7 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
-  } while(feedBack != VALID_NEW_MSG || type == NACK || type == INVERT);
+  } while(feedBack != VALID_NEW_MSG || type == NACK);
 
   this->isFirstRecv = false;
 }
@@ -356,7 +356,7 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 // InvertToReceiver
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
-  this->SendGenericData(INVERT, NULL, 0);
+  this->SendResponse(INVERT, NULL, 0);
 }
 
 //===================================================================
