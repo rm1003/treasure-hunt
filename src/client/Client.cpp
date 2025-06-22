@@ -147,6 +147,7 @@ int TreasureHunt::Client::ShowTreasure() {
   int ret;
   std::string command;
 
+  printf("Setting up to show treasure...\n");
   switch (this->treasureType) {
     case MP4:
       command = SUDO_OPT + MP4_PLAYER + this->filePath;
@@ -164,6 +165,8 @@ int TreasureHunt::Client::ShowTreasure() {
       ERROR_PRINT("Unknown file type. Exiting.\n");
       exit(1);
   }
+  printf("Done!\n");
+
   return ret;
 }
 
