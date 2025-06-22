@@ -104,11 +104,11 @@ int Data::Buffer::AppendToBuffer(void *ptr, size_t len) {
   }
 
   if (this->offset + len > BUFFER_SIZE)
-    return 1;
+    return 0;
 
   memcpy(this->store + this->offset, ptr, len);
   this->offset += len;
-  return 0;
+  return len;
 }
 
 //=================================================================//

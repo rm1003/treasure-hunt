@@ -8,10 +8,6 @@
 
 namespace fs = std::filesystem;
 
-static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location) {
-  ERROR_PRINT("Unexpected message type [%d] in [%s]\n", msg, location);
-}
-
 TreasureHunt::Server::Server() {
   this->clientPos.SetPosition(0, 0);
   this->treasures.resize(TOTAL_TREASURES);
@@ -183,24 +179,25 @@ void TreasureHunt::Server::SendTreasure() {
   void *ptr;
   size_t actualSize;
 
+  /* format file path */
   strcat(this->filePath, this->foundTreasure->treasureName);
 
   fs::path arquivo(this->filePath);
   printf("File path [%s]; ", this->filePath);
   fileSize = fs::file_size(arquivo);
   printf("File size [%lu]\n", fileSize);
+
+  /* check if client has enough to space */
   this->netHandler.SendGenericData(CustomProtocol::FILE_SIZE, &fileSize, sizeof(fileSize));
   msgRet = netHandler.RecvResponse(NULL, NULL);
   if (msgRet == CustomProtocol::ERROR) {
     printf("Client cant handle file of size [%lu]. Exiting.", fileSize);
     exit(1);
   }
-  if (msgRet != CustomProtocol::ACK) {
-    PrintErrorMsgType(msgRet, "SendTreasure");
-    exit(1);
-  }
+  assert(msgRet == CustomProtocol::ACK);
 
   buffer.OpenFileForRead(this->filePath);
+  this->buffer.RetrieveBuffer();
   ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
   do {
     netHandler.SendGenericData(CustomProtocol::DATA, ptr, actualSize);
@@ -213,7 +210,6 @@ void TreasureHunt::Server::SendTreasure() {
       ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
     }
   } while (ptr != NULL);
-
   netHandler.SendGenericData(CustomProtocol::END_OF_FILE, NULL, 0);
   msgRet = netHandler.RecvResponse(NULL, NULL);
   assert(msgRet == CustomProtocol::ACK);

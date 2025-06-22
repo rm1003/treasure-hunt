@@ -128,21 +128,15 @@ void TreasureHunt::Client::GetServerTreasure() {
   do {
     msgRet = netHandler.RecvGenericData(this->data, &dataLen);
     netHandler.SendResponse(CustomProtocol::ACK, NULL, 0);
-    switch (msgRet) {
-      case CustomProtocol::DATA:
-        if (buffer.AppendToBuffer(data, dataLen)) {
-          buffer.FlushBuffer();
-          buffer.AppendToBuffer(data, dataLen);
-        }
-        break;
-      case CustomProtocol::END_OF_FILE:
+    if (msgRet == CustomProtocol::DATA) {
+      if (!buffer.AppendToBuffer(data, dataLen)) {
         buffer.FlushBuffer();
-        buffer.CloseFile();
-        break;
-      default:
-        PrintErrorMsgType(msgRet, "GetServerTreasure");
+        buffer.AppendToBuffer(data, dataLen);
+      }
     }
   } while(msgRet != CustomProtocol::END_OF_FILE);
+  buffer.FlushBuffer();
+  buffer.CloseFile();
 
   if (numberOfFoundTreasures != TOTAL_TREASURES) {
     this->netHandler.InvertToSender();
