@@ -74,10 +74,8 @@ int TreasureHunt::Client::InformServerMovement(MsgType mov) {
   char *treasureName;
 
   treasureName = &this->filePath[sizeof(TREASURES_DIR) - sizeof('\0')];
-  do {
-    netHandler.SendGenericData(mov, NULL, 0);
-    ret = netHandler.RecvResponse((void*)treasureName, NULL);
-  } while (ret == CustomProtocol::INVERT);
+  netHandler.SendGenericData(mov, NULL, 0);
+  ret = netHandler.RecvResponse((void*)treasureName, NULL);
 
   if (ret == CustomProtocol::OK_AND_ACK) {
     return VALID_MOVE;

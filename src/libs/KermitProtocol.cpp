@@ -275,7 +275,7 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
-  } while(feedBack != VALID_NEW_MSG || type == NACK);
+  } while(feedBack != VALID_NEW_MSG || type == NACK || type == INVERT);
 
   this->isFirstRecv = false;
 }
