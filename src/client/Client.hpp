@@ -10,9 +10,9 @@ namespace TreasureHunt {
 const char SPACE[] = "   ";
 const int NUMBER_OF_NEW_LINES = 80;
 
-const std::string MP4_PLAYER  = "vlc ";
-const std::string JPG_PLAYER  = "eog ";
-const std::string TXT_PLAYER  = "xed ";
+const std::string MP4_PLAYER  = " vlc ";
+const std::string JPG_PLAYER  = " eog ";
+const std::string TXT_PLAYER  = " xed ";
 const std::string SUDO_OPT    = "sudo -u ";
 const std::string STDERR_OPT = "2> /dev/null ";
 
