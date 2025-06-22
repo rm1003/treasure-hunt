@@ -98,6 +98,8 @@ int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
           return REPEATED_MSG;
         }
         if (this->recvPkg.idx != (NEXT_IDX(this->lastRecvIdx))) {
+          ERROR_PRINT("Last recv idx [%d]\n", this->lastRecvIdx);
+          ERROR_PRINT("Type recv pkg [%d]\n", this->recvPkg.type);
           ERROR_PRINT("Invalid sequence number [%d]. Exiting.\n", this->recvPkg.idx);
           exit(1);
         }
@@ -355,7 +357,7 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 // InvertToReceiver
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
-  this->SendGenericData(INVERT, NULL, 0);
+  this->SendResponse(INVERT, NULL, 0);
 }
 
 //===================================================================
