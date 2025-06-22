@@ -6,6 +6,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <filesystem>
+extern "C" {
+#include <pwd.h>
+#include <unistd.h>
+}
 
 namespace fs = std::filesystem;
 
@@ -59,6 +63,12 @@ void TreasureHunt::Client::PrintGrid() {
   }
 
   fflush(stdout);
+}
+
+void TreasureHunt::Client::GetUser() {
+  uid_t uid = getuid();
+  struct passwd *info = getpwuid(uid);
+  this->user = info->pw_name;
 }
 
 void TreasureHunt::Client::PrintEmptySpace() {
@@ -155,15 +165,15 @@ int TreasureHunt::Client::ShowTreasure() {
   printf("Setting up to show treasure...\n");
   switch (this->treasureType) {
     case MP4:
-      command = SUDO_OPT + MP4_PLAYER + this->filePath + STDERR_OPT;
+      command = SUDO_OPT + this->user + MP4_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     case JPG:
-      command = SUDO_OPT + JPG_PLAYER + this->filePath + STDERR_OPT;
+      command = SUDO_OPT + this->user +JPG_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     case TXT:
-      command = SUDO_OPT + TXT_PLAYER + this->filePath + STDERR_OPT;
+      command = SUDO_OPT + this->user +TXT_PLAYER + this->filePath + STDERR_OPT;
       ret = std::system(command.c_str());
       break;
     default:

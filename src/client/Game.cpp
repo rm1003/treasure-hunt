@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
   newConfT.c_lflag &= ~(ICANON | ECHO);
   tcsetattr(STDIN_FILENO, TCSANOW, &newConfT);
 
+  client.GetUser();
   printf("\nPress any key to start game...");
   getchar();
 

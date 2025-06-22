@@ -33,17 +33,13 @@ class Client {
   public:
     Client();
     ~Client();
+    void GetUser();
     void PrintGrid();
     void PrintEmptySpace();
-    /* */
     void Move(MsgType mov);
-    /*  */
     int InformServerMovement(MsgType mov);
-    /* Return 0 on success. Return 1 if failed */
     void GetServerTreasure();
-    /* */
     int ShowTreasure();
-    /*  */
     bool GameEnded();
 };
 
