@@ -46,6 +46,8 @@ void Data::Buffer::CloseFile() {
     exit(1);
   }
   close(this->fd);
+  this->offset = 0;
+  this->activeSize = 0;
   return;
 }
 

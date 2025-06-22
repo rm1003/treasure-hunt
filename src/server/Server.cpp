@@ -209,9 +209,8 @@ void TreasureHunt::Server::SendTreasure() {
 
     ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
     if (ptr == NULL) {
-      if (this->buffer.RetrieveBuffer()) {
-        ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
-      }
+      this->buffer.RetrieveBuffer();
+      ptr = this->buffer.GetData(CustomProtocol::DATA_SIZE, &actualSize);
     }
   } while (ptr != NULL);
 

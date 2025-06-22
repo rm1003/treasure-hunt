@@ -113,6 +113,7 @@ void TreasureHunt::Client::GetServerTreasure() {
   msgRet = this->netHandler.RecvGenericData(this->data, NULL);
   assert(msgRet == CustomProtocol::FILE_SIZE);
   fileSize = *(size_t *)(this->data);
+  printf("Treasure size[%lu]\n", fileSize);
 
   spaceInfo = fs::space(TREASURES_DIR);
   availableSize = spaceInfo.available;
@@ -156,12 +157,15 @@ int TreasureHunt::Client::ShowTreasure() {
     case MP4:
       command = SUDO_OPT + MP4_PLAYER + this->filePath;
       ret = std::system(command.c_str());
+      break;
     case JPG:
       command = SUDO_OPT + JPG_PLAYER + this->filePath;
       ret = std::system(command.c_str());
+      break;
     case TXT:
       command = SUDO_OPT + TXT_PLAYER + this->filePath;
       ret = std::system(command.c_str());
+      break;
     default:
       ERROR_PRINT("Unknown file type. Exiting.\n");
       exit(1);
