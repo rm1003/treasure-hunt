@@ -6,10 +6,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <filesystem>
-extern "C" {
-#include <pwd.h>
-#include <unistd.h>
-}
 
 namespace fs = std::filesystem;
 
@@ -18,7 +14,7 @@ static void PrintErrorMsgType(CustomProtocol::MsgType msg, const char *location)
 }
 
 TreasureHunt::Client::Client() {
-  this->user = getpwuid(getuid())->pw_name;
+  this->user = std::getenv("SUDO_USER");
   this->currentPosition.SetPosition(INI_X, INI_Y);
   this->numberOfFoundTreasures = 0;
   memset(this->wasReached, 0, sizeof(this->wasReached));
