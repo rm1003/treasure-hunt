@@ -26,9 +26,9 @@ int main(int argc, char *argv[]) {
   printf("\nPress any key to start game...");
   getchar();
 
-  client.PrintEmptySpace();
-  client.PrintGrid();
   do {
+    client.PrintEmptySpace();
+    client.PrintGrid();
     do {
       key = getchar();
     } while (IsNotMovementKey(key));
@@ -56,15 +56,14 @@ int main(int argc, char *argv[]) {
         break;
     }
 
-    client.PrintEmptySpace();
-    client.PrintGrid();
-
     if (ret == TREASURE_FOUND) {
       printf("+1 treasure found!\n");
       client.GetServerTreasure();
       client.ShowTreasure();
     }
   } while (!client.GameEnded());
+  client.PrintEmptySpace();
+  client.PrintGrid();
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);
 
