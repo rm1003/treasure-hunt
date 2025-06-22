@@ -71,7 +71,7 @@ void CustomProtocol::PackageHandler::InitSendPackage(unsigned short type, void *
 // SendPackage
 //===================================================================
 int CustomProtocol::PackageHandler::SendPackage() {
-  return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
+  return this->sokt->Send(this->rawBytesSend, sizeof(this->rawBytesSend));
 }
 
 //===================================================================
@@ -82,7 +82,7 @@ int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
   unsigned long init = timestamp();
 
   do {
-    ret = this->sokt->Recv(this->rawBytes, sizeof(this->rawBytes));
+    ret = this->sokt->Recv(this->rawBytesRecv, sizeof(this->rawBytesRecv));
     if (ret == -1) {
       continue;
     }
@@ -163,12 +163,12 @@ void CustomProtocol::PackageHandler::Append0xff() {
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
 
-  memset(this->rawBytes, 0, sizeof(this->rawBytes));
+  memset(this->rawBytesSend, 0, sizeof(this->rawBytesSend));
 
   for (; pkgIt < sizeof(KermitPackage); rawBytesIt++, pkgIt++) {
-    this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
+    this->rawBytesSend[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
-      this->rawBytes[++rawBytesIt] = 0xff;
+      this->rawBytesSend[++rawBytesIt] = 0xff;
     }
   }
 }
@@ -182,7 +182,7 @@ void CustomProtocol::PackageHandler::Remove0xff() {
   unsigned long pkgIt = 0;
 
   for (; pkgIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
-    pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
+    pkgBytes[pkgIt] = this->rawBytesRecv[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
       rawBytesIt++;
     }
@@ -202,7 +202,7 @@ bool CustomProtocol::PackageHandler::VerifyChecksum() {
 // IsMsgKermitPackage
 //===================================================================
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
-  return (rawBytes[0] == INIT_MARK);
+  return (this->rawBytesRecv[0] == INIT_MARK);
 }
 
 
@@ -277,6 +277,9 @@ void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, siz
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
+    if (feedBack == TIMEOUT_REACHED) {
+      printf("Trying to send pkg again\n");
+    }
   } while(feedBack != VALID_NEW_MSG || type == NACK || type == INVERT);
 
   this->isFirstRecv = false;

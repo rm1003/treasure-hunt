@@ -63,8 +63,9 @@ class PackageHandler {
   private:
     CustomSocket::RawSocket *sokt;
     struct KermitPackage sendPkg;
+    unsigned char rawBytesSend[MAX_PACKAGE_SIZE];
     struct KermitPackage recvPkg;
-    unsigned char rawBytes[MAX_PACKAGE_SIZE];
+    unsigned char rawBytesRecv[MAX_PACKAGE_SIZE];
     unsigned char lastRecvIdx;
     unsigned char lastUsedIdx;
 
