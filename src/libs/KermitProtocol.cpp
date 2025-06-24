@@ -71,7 +71,7 @@ void CustomProtocol::PackageHandler::InitSendPackage(unsigned short type, void *
 // SendPackage
 //===================================================================
 int CustomProtocol::PackageHandler::SendPackage() {
-  return this->sokt->Send(this->rawBytes, sizeof(this->rawBytes));
+  return this->sokt->Send(this->rawBytesSend, sizeof(this->rawBytesSend));
 }
 
 //===================================================================
@@ -82,7 +82,7 @@ int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
   unsigned long init = timestamp();
 
   do {
-    ret = this->sokt->Recv(this->rawBytes, sizeof(this->rawBytes));
+    ret = this->sokt->Recv(this->rawBytesRecv, sizeof(this->rawBytesRecv));
     if (ret == -1) {
       continue;
     }
@@ -98,6 +98,8 @@ int CustomProtocol::PackageHandler::RecvPackage(bool ignoreSequence) {
           return REPEATED_MSG;
         }
         if (this->recvPkg.idx != (NEXT_IDX(this->lastRecvIdx))) {
+          ERROR_PRINT("Last recv idx [%d]\n", this->lastRecvIdx);
+          ERROR_PRINT("Type recv pkg [%d]\n", this->recvPkg.type);
           ERROR_PRINT("Invalid sequence number [%d]. Exiting.\n", this->recvPkg.idx);
           exit(1);
         }
@@ -161,12 +163,12 @@ void CustomProtocol::PackageHandler::Append0xff() {
   unsigned long pkgIt = 0;
   unsigned long rawBytesIt = 0;
 
-  memset(this->rawBytes, 0, sizeof(this->rawBytes));
+  memset(this->rawBytesSend, 0, sizeof(this->rawBytesSend));
 
   for (; pkgIt < sizeof(KermitPackage); rawBytesIt++, pkgIt++) {
-    this->rawBytes[rawBytesIt] = pkgBytes[pkgIt];
+    this->rawBytesSend[rawBytesIt] = pkgBytes[pkgIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
-      this->rawBytes[++rawBytesIt] = 0xff;
+      this->rawBytesSend[++rawBytesIt] = 0xff;
     }
   }
 }
@@ -180,7 +182,7 @@ void CustomProtocol::PackageHandler::Remove0xff() {
   unsigned long pkgIt = 0;
 
   for (; pkgIt < sizeof(KermitPackage); pkgIt++, rawBytesIt++) {
-    pkgBytes[pkgIt] = this->rawBytes[rawBytesIt];
+    pkgBytes[pkgIt] = this->rawBytesRecv[rawBytesIt];
     if (pkgBytes[pkgIt] == 0x88 || pkgBytes[pkgIt] == 0x81) {
       rawBytesIt++;
     }
@@ -200,7 +202,7 @@ bool CustomProtocol::PackageHandler::VerifyChecksum() {
 // IsMsgKermitPackage
 //===================================================================
 bool CustomProtocol::PackageHandler::IsMsgKermitPackage() {
-  return (rawBytes[0] == INIT_MARK);
+  return (this->rawBytesRecv[0] == INIT_MARK);
 }
 
 
@@ -267,16 +269,17 @@ void CustomProtocol::NetworkHandler::TransferData(const KermitPackage *retPkg,
 // SendGeneticData
 //===================================================================
 void CustomProtocol::NetworkHandler::SendGenericData(MsgType msg, void *ptr, size_t len) {
-  this->pkgHandler->InitSendPackage(msg, ptr, len);
-  this->pkgHandler->SendPackage();
-  int feedBack = this->pkgHandler->RecvPackage(true);
-  unsigned short type = this->pkgHandler->GetRecvPkg()->type;
+  int feedBack;
+  unsigned short type;
 
-  while (feedBack != VALID_NEW_MSG || type == NACK) {
+  this->pkgHandler->InitSendPackage(msg, ptr, len);
+  do {
     this->pkgHandler->SendPackage();
     feedBack = this->pkgHandler->RecvPackage(true);
     type = this->pkgHandler->GetRecvPkg()->type;
-  }
+  } while(feedBack != VALID_NEW_MSG || type == NACK);
+
+  this->isFirstRecv = false;
 }
 
 //===================================================================
@@ -307,22 +310,21 @@ CustomProtocol::MsgType CustomProtocol::NetworkHandler::RecvGenericData(void *pt
 //===================================================================
 // SendResponse
 //===================================================================
-void CustomProtocol::NetworkHandler::SendResponse(MsgType msg) {
+void CustomProtocol::NetworkHandler::SendResponse(MsgType msg, void *ptr, size_t len) {
   int feedBack;
 
-  this->pkgHandler->InitSendPackage(msg, NULL, 0);
+  this->pkgHandler->InitSendPackage(msg, ptr, len);
   this->pkgHandler->SendPackage();
   do {
     feedBack = this->pkgHandler->RecvPackage(false);
-    switch (feedBack) {
-      case REPEATED_MSG:
-        this->pkgHandler->SendPackage();
-        break;
-      case INVALID_NEW_MSG:
-        /* create NACK pkg then revert to original */
+    if (feedBack == REPEATED_MSG) {
+      this->pkgHandler->SendPackage();
+    } else {
+      if (feedBack == INVALID_NEW_MSG) {
         this->pkgHandler->InitSendPackage(NACK, NULL, 0);
         this->pkgHandler->SendPackage();
-        this->pkgHandler->InitSendPackage(msg, NULL, 0);
+        this->pkgHandler->InitSendPackage(msg, NULL, 0); /* revert to original */
+      }
     }
   } while (feedBack != VALID_NEW_MSG);
 }
@@ -354,7 +356,7 @@ void CustomProtocol::NetworkHandler::InvertToSender() {
 // InvertToReceiver
 //===================================================================
 void CustomProtocol::NetworkHandler::InvertToReceiver() {
-  this->SendGenericData(INVERT, NULL, 0);
+  this->SendResponse(INVERT, NULL, 0);
 }
 
 //===================================================================
@@ -362,11 +364,12 @@ void CustomProtocol::NetworkHandler::InvertToReceiver() {
 //===================================================================
 void CustomProtocol::NetworkHandler::ServerEndGame() {
   int ret;
-  // try 20 times (2 seconds)
+  /* try 20 times (2 seconds) */
   this->pkgHandler->InitSendPackage(STOP_GAME, NULL, 0);
   for (int i = 0; i < ENDGAME_RETRIES; ++i) {
     this->pkgHandler->SendPackage();
-    if (ret = this->pkgHandler->RecvPackage(false) == VALID_NEW_MSG) {
+    ret = this->pkgHandler->RecvPackage(true);
+    if (ret == VALID_NEW_MSG) {
       if (this->pkgHandler->GetRecvPkg()->type == ACK)
         break;
     }
@@ -381,6 +384,6 @@ void CustomProtocol::NetworkHandler::ClientEndGame() {
   this->pkgHandler->InitSendPackage(ACK, NULL, 0);
   do {
     this->pkgHandler->SendPackage();
-    ret = this->pkgHandler->RecvPackage(false);
+    ret = this->pkgHandler->RecvPackage(true);
   } while (ret != TIMEOUT_REACHED);
 }

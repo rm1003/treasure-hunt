@@ -11,7 +11,7 @@ bool IsNotMovementKey(char key) {
   return (key != 'w' && key != 'a' && key != 's' && key != 'd');
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   struct termios newConfT;
   struct termios oldConfT;
   TreasureHunt::Client client;
@@ -23,9 +23,12 @@ int main() {
   newConfT.c_lflag &= ~(ICANON | ECHO);
   tcsetattr(STDIN_FILENO, TCSANOW, &newConfT);
 
-  client.PrintEmptySpace();
-  client.PrintGrid();
-  while (1) {
+  printf("\nPress any key to start game...");
+  getchar();
+
+  do {
+    client.PrintEmptySpace();
+    client.PrintGrid();
     do {
       key = getchar();
     } while (IsNotMovementKey(key));
@@ -54,13 +57,13 @@ int main() {
     }
 
     if (ret == TREASURE_FOUND) {
+      printf("+1 treasure found!\n");
       client.GetServerTreasure();
       client.ShowTreasure();
     }
-
-    client.PrintEmptySpace();
-    client.PrintGrid();
-  }
+  } while (!client.GameEnded());
+  client.PrintEmptySpace();
+  client.PrintGrid();
 
   tcsetattr(STDIN_FILENO, TCSANOW, &oldConfT);
 

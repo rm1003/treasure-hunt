@@ -45,7 +45,7 @@ all: client server
 test: test_client test_server
 
 debug: CXXFLAGS += $(DEBUGFLAGS)
-debug: test_client test_server
+debug: client server
 
 client: $(OBJ_CLIENT)
 	@mkdir -p $(BIN_CLIENT)
@@ -69,8 +69,8 @@ $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	find $(SRC_DIR) $(TEST_DIR) -name "*.o" -delete
-	rm -f $(CLIENT) $(SERVER) $(TEST)
+	find $(OBJ_DIR) -name "*.o" -delete
+# rm -f $(CLIENT) $(SERVER) $(TEST)
 
 purge: clean
 	rm -rf $(BIN_DIR)

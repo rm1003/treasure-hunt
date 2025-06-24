@@ -11,7 +11,6 @@ namespace Data {
 
 /* 1Mib */
 const unsigned long BUFFER_SIZE = 1 << 20;
-const int APPEND_IMPOSSIBLE = 2;
 
 class Buffer {
   private:

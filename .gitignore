@@ -1,19 +1,18 @@
 clientT
 serverT
+objects/
 # testing/
 # objects/
 bin/
 build/
 *.vscode
-*.mp4
 # Object files
 *.o
 *.ko
 *.obj
 *.elf
-
+#*.txt
 # Linker output
 *.ilk
 *.map
 *.exp
-
